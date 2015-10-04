@@ -33,33 +33,17 @@ public class EmbeddedVector implements Vector {
 
     @Override
     public double get(int pos) {
-        return matrix.data[dataIndex(pos)];
-    }
-
-    @Override
-    public void set(int pos, double value) {
-        matrix.data[dataIndex(pos)] = value;
+        int row = type == VectorType.ROW ? idx : pos;
+        int col = type == VectorType.ROW ? pos : idx;
+        return matrix.data[row][col];
     }
 
     @Override
     public double[] asArray() {
-        double[] res = new double[length()];
-
-        if (type == VectorType.ROW && matrix.orderedByRows)
-            System.arraycopy(matrix.data, idx * matrix.n, res, 0, matrix.n);
-        else if (type == VectorType.COLUMN && !matrix.orderedByRows)
-            System.arraycopy(matrix.data, idx * matrix.m, res, 0, matrix.m);
-        else
-            for (int i = 0; i < res.length; i++) res[i] = matrix.data[dataIndex(i)];
-
+        int length = length();
+        double[] res = new double[length];
+        for (int i = 0; i < length; i++) res[i] = get(i);
         return res;
-    }
-
-    private int dataIndex(int pos) {
-        assert pos >= 0 && pos < length();
-        int row = type == VectorType.ROW ? this.idx : pos;
-        int col = type == VectorType.ROW ? pos : this.idx;
-        return matrix.indexOf(row, col);
     }
 }
 

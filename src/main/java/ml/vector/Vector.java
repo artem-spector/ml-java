@@ -16,8 +16,6 @@ public interface Vector {
 
     double get(int pos);
 
-    void set(int pos, double value);
-
     double[] asArray();
 
     default double multiply(Vector v) {

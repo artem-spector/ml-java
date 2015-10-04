@@ -32,11 +32,6 @@ public class StandaloneVector implements Vector {
     }
 
     @Override
-    public void set(int pos, double value) {
-        data[pos] = value;
-    }
-
-    @Override
     public double[] asArray() {
         return data;
     }
