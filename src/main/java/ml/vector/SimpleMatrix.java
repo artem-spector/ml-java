@@ -11,23 +11,23 @@ import java.util.*;
  * @author artem
  *         Date: 9/30/15
  */
-public class MatrixImpl implements Matrix {
+public class SimpleMatrix implements Matrix {
 
     protected int m;
     protected int n;
     protected double[][] data;
 
-    public static MatrixImpl eye(int size) {
-        MatrixImpl res = new MatrixImpl(size, size);
+    public static SimpleMatrix eye(int size) {
+        SimpleMatrix res = new SimpleMatrix(size, size);
         for (int i = 0; i < size; i++) res.set(i, i, 1);
         return res;
     }
 
-    public MatrixImpl(int m, int n) {
+    public SimpleMatrix(int m, int n) {
         this(new double[m][n]);
     }
 
-    MatrixImpl(double[][] data) {
+    SimpleMatrix(double[][] data) {
         this.m = data.length;
         this.n = data[0].length;
         this.data = data;
@@ -69,12 +69,12 @@ public class MatrixImpl implements Matrix {
                 res.add(row);
             }
         }
-        return new MatrixImpl(res.toArray(new double[res.size()][]));
+        return new SimpleMatrix(res.toArray(new double[res.size()][]));
     }
 
     @Override
     public Matrix selectColumns(int... colIdx) {
-        MatrixImpl res = new MatrixImpl(m, colIdx.length);
+        SimpleMatrix res = new SimpleMatrix(m, colIdx.length);
         for (int j  = 0; j < colIdx.length; j++) {
             for (int i = 0; i < m; i++) res.data[i][j] = data[i][colIdx[j]];
         }
@@ -82,7 +82,7 @@ public class MatrixImpl implements Matrix {
     }
 
     public Matrix transpose() {
-        MatrixImpl res = new MatrixImpl(n, m);
+        SimpleMatrix res = new SimpleMatrix(n, m);
         for (int i = 0; i < m; i++)
             for (int j = 0; j < n; j++)
                 res.data[j][i] = data[i][j];
@@ -91,12 +91,12 @@ public class MatrixImpl implements Matrix {
 
     public Matrix multiply(Matrix other) {
         assert n == other.numRows();
-        MatrixImpl res = new MatrixImpl(m, other.numColumns());
+        SimpleMatrix res = new SimpleMatrix(m, other.numColumns());
         for (int i = 0; i < res.m; i++) {
             for (int j = 0; j < res.n; j++) {
                 double val = 0;
                 for (int k = 0; k < n; k++) {
-                    val += data[i][k] * ((MatrixImpl) other).data[k][j];
+                    val += data[i][k] * ((SimpleMatrix) other).data[k][j];
                 }
                 res.data[i][j] = val;
             }
@@ -107,7 +107,7 @@ public class MatrixImpl implements Matrix {
     @Override
     public Matrix multiplyElements(Vector column) {
         assert column.type() == Vector.VectorType.COLUMN && column.length() == m;
-        MatrixImpl res = new MatrixImpl(m, n);
+        SimpleMatrix res = new SimpleMatrix(m, n);
         for (int i = 0; i < m; i++)
             for (int j = 0; j < n; j++)
                 res.data[i][j] = data[i][j] * column.get(i);
@@ -117,26 +117,26 @@ public class MatrixImpl implements Matrix {
     @Override
     public Matrix subtract(Matrix other) {
         assert m == other.numRows() && n == other.numColumns();
-        MatrixImpl res = new MatrixImpl(m, n);
+        SimpleMatrix res = new SimpleMatrix(m, n);
         for (int i = 0; i < m; i++)
             for (int j = 0; j < n; j++)
-                res.data[i][j] = data[i][j] - ((MatrixImpl) other).data[i][j];
+                res.data[i][j] = data[i][j] - ((SimpleMatrix) other).data[i][j];
         return res;
     }
 
     @Override
     public Matrix add(Matrix other) {
         assert m == other.numRows() && n == other.numColumns();
-        MatrixImpl res = new MatrixImpl(m, n);
+        SimpleMatrix res = new SimpleMatrix(m, n);
         for (int i = 0; i < m; i++)
             for (int j = 0; j < n; j++)
-                res.data[i][j] = data[i][j] + ((MatrixImpl) other).data[i][j];
+                res.data[i][j] = data[i][j] + ((SimpleMatrix) other).data[i][j];
         return res;
     }
 
     @Override
     public Matrix applyFunction(FunctionEvaluator function) {
-        MatrixImpl res = new MatrixImpl(m, n);
+        SimpleMatrix res = new SimpleMatrix(m, n);
         for (int i = 0; i < m; i++)
             for (int j = 0; j < n; j++)
                 res.data[i][j] = function.eval(data[i][j]);
@@ -154,7 +154,7 @@ public class MatrixImpl implements Matrix {
     @Override
     public Matrix normalize(Statistics[] columnStatistics) {
         assert columnStatistics.length == n;
-        MatrixImpl res = new MatrixImpl(m, n);
+        SimpleMatrix res = new SimpleMatrix(m, n);
         for (int i = 0; i < m; i++)
             for (int j = 0; j < n; j++)
                 res.data[i][j] = columnStatistics[j].normalizeFunction.eval(data[i][j]);
@@ -163,7 +163,7 @@ public class MatrixImpl implements Matrix {
 
     @Override
     public Matrix addPlynomialFeatures(PolynomialFeatures pol) {
-        MatrixImpl res = new MatrixImpl(m, n + pol.numPolynoms());
+        SimpleMatrix res = new SimpleMatrix(m, n + pol.numPolynoms());
         for (int i = 0; i < m; i++) {
             System.arraycopy(data[i], 0, res.data[i], 0, n);
             pol.calculatePolynomialFeatures(res.data[i], 0, n);
@@ -173,7 +173,7 @@ public class MatrixImpl implements Matrix {
 
     @Override
     public Matrix addOnesColumn() {
-        MatrixImpl res = new MatrixImpl(m, n + 1);
+        SimpleMatrix res = new SimpleMatrix(m, n + 1);
         for (int i = 0; i < m; i++) {
             res.data[i][0] = 1;
             System.arraycopy(data[i], 0, res.data[i], 1, n);
@@ -194,9 +194,9 @@ public class MatrixImpl implements Matrix {
     @Override
     public boolean equals(Object obj) {
         if (obj == this) return true;
-        if (obj == null || !(obj instanceof MatrixImpl)) return false;
+        if (obj == null || !(obj instanceof SimpleMatrix)) return false;
 
-        MatrixImpl that = (MatrixImpl) obj;
+        SimpleMatrix that = (SimpleMatrix) obj;
         if (this.m != that.m || this.n != that.n)
             return false;
         else {

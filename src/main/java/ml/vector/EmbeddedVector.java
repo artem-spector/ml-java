@@ -9,10 +9,10 @@ package ml.vector;
 public class EmbeddedVector implements Vector {
 
     private VectorType type;
-    private MatrixImpl matrix;
+    private SimpleMatrix matrix;
     private int idx;
 
-    EmbeddedVector(VectorType type, int idx, MatrixImpl matrix) {
+    EmbeddedVector(VectorType type, int idx, SimpleMatrix matrix) {
         assert idx >= 0;
         assert type == VectorType.ROW && idx < matrix.m || type == VectorType.COLUMN && idx < matrix.n;
 

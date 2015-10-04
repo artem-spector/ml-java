@@ -46,8 +46,8 @@ public class MatrixTest {
             for (int j = 0; j < n; j++) x.set(i, j, count++);
         checkTranspose(x);
 
-        checkTranspose(MatrixImpl.eye(5));
-        checkTranspose(new MatrixImpl(4, 4));
+        checkTranspose(SimpleMatrix.eye(5));
+        checkTranspose(new SimpleMatrix(4, 4));
     }
 
     @Test
