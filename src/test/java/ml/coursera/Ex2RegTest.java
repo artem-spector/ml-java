@@ -13,6 +13,9 @@ import ml.vector.MatrixFactory;
 import ml.vector.SimpleMatrixFactory;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.math.plot.Plot2DPanel;
+
+import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
 
@@ -24,6 +27,7 @@ import static org.junit.Assert.assertEquals;
  */
 public class Ex2RegTest {
 
+    private static DisplayUtil disp = new DisplayUtil();
     private static MatrixFactory factory = new SimpleMatrixFactory();
     private static Matrix allData;
 
@@ -39,10 +43,8 @@ public class Ex2RegTest {
     }
 
     @Test
-    public void plotInitialData() {
-        DisplayUtil disp = new DisplayUtil();
-        plotTrainingData(disp);
-        disp.saveImage("./target/Ex2RegTrainingData.png");
+    public void plotInitialData() throws IOException {
+        disp.saveImage(plotTrainingData(), "./target/Ex2RegTrainingData.png");
     }
 
     @Test
@@ -64,7 +66,7 @@ public class Ex2RegTest {
     }
 
     @Test
-    public void testRegularization() {
+    public void testRegularization() throws IOException {
         PolynomialFeatures polynomialFeatures = new PolynomialFeatures(new int[]{0, 1}, 6);
         TrainingSet train = new TrainingSet()
                 .setModelCalculator(new LogisticModel())
@@ -82,10 +84,9 @@ public class Ex2RegTest {
         System.out.printf("Train accuracy %f %n", accuracy);
         assertEquals(83.050847, accuracy, 1e-6);
 
-        DisplayUtil disp = new DisplayUtil();
-        plotTrainingData(disp);
-        plotDecisionBoundary(train, finalTheta, disp);
-        disp.saveImage("./target/Ex2RegDecisionBoundary.png");
+        Plot2DPanel panel = plotTrainingData();
+        plotDecisionBoundary(train, finalTheta, panel);
+        disp.saveImage(panel, "./target/Ex2RegDecisionBoundary.png");
     }
 
     private Matrix minimize(TrainingSet trainingSet, Matrix initialTheta) {
@@ -95,18 +96,21 @@ public class Ex2RegTest {
         return factory.createMatrix(minTheta.length, 1, minTheta);
     }
 
-    private void plotTrainingData(DisplayUtil disp) {
+    private Plot2DPanel plotTrainingData() {
         Matrix passed = allData.selectRows(row -> row[2] == 1);
         Matrix notPassed = allData.selectRows(row -> row[2] == 0);
 
-        disp.createPlotPanel("Test 1", "Test 2");
-        disp.addPlotScatter("y=1", passed.getColumn(0).asArray(), passed.getColumn(1).asArray());
-        disp.addPlotScatter("y=0", notPassed.getColumn(0).asArray(), notPassed.getColumn(1).asArray());
+        Plot2DPanel panel = disp.createPlotPanel("Test 1", "Test 2", null);
+        panel.addScatterPlot("y=1", passed.getColumn(0).asArray(), passed.getColumn(1).asArray());
+        panel.addScatterPlot("y=0", notPassed.getColumn(0).asArray(), notPassed.getColumn(1).asArray());
+
+        return panel;
     }
 
-    private void plotDecisionBoundary(TrainingSet trainingSet, Matrix theta, DisplayUtil disp) {
+    private void plotDecisionBoundary(TrainingSet trainingSet, Matrix theta, Plot2DPanel panel) {
         GridDimension gridDimension = new GridDimension(-1, 1.5, 800);
         ContourFunction f = (x, y) -> Math.abs(trainingSet.predictSingle(theta, new double[]{x,y}) - 0.5) <= 1e-3 ;
-        disp.addPlotContour("Decision boundary", gridDimension, gridDimension, f);
+        double[][] contourPoints = disp.getContourPoints(gridDimension, gridDimension, f);
+        panel.addLinePlot("Decision boundary", contourPoints);
     }
 }

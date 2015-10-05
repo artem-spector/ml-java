@@ -15,6 +15,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import javax.swing.*;
 import java.util.Map;
 
 /**
@@ -25,6 +26,7 @@ import java.util.Map;
  */
 public class TestEx3 {
 
+    private static DisplayUtil displayUtil = new DisplayUtil();
     private static MatrixFactory factory = new SimpleMatrixFactory();
 
     private static Matrix X;
@@ -46,9 +48,8 @@ public class TestEx3 {
         double[][] images = new double[100][];
         int[] randIndexes = new ArrayUtil().randperm(X.numRows());
         for (int i = 0; i < images.length; i++) images[i] = X.getRow(randIndexes[i]).asArray();
-        DisplayUtil displayUtil = new DisplayUtil();
-        displayUtil.displayImageGrid(images, 20, 20, 2);
-        displayUtil.saveImage("./target/Ex3TrainingSample.png");
+        JPanel panel = displayUtil.createImageGrid(images, 20, 20, 2);
+        displayUtil.saveImage(panel, "./target/Ex3TrainingSample.png");
     }
 
     @Test

@@ -2,7 +2,6 @@ package ml.coursera;
 
 import edu.stanford.nlp.optimization.QNMinimizer;
 import ml.DataLoadUtil;
-import ml.DoubleMatrixFactory;
 import ml.FunctionEvaluator;
 import ml.display.DisplayUtil;
 import ml.regression.LogisticModel;
@@ -13,6 +12,9 @@ import ml.vector.MatrixFactory;
 import ml.vector.SimpleMatrixFactory;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.math.plot.Plot2DPanel;
+
+import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
 
@@ -24,6 +26,7 @@ import static org.junit.Assert.assertEquals;
  */
 public class Ex2Test {
 
+    private static DisplayUtil disp = new DisplayUtil();
     private static MatrixFactory factory = new SimpleMatrixFactory();
 
     private static Matrix X;
@@ -44,13 +47,12 @@ public class Ex2Test {
     }
 
     @Test
-    public void testPlotAdmittedNotAdmitted() {
+    public void testPlotAdmittedNotAdmitted() throws IOException {
         assertEquals(X.numRows(), admitted.numRows() + notAdmitted.numRows());
-        DisplayUtil disp = new DisplayUtil();
-        disp.createPlotPanel("Exam 1 score", "Exam 2 score");
-        disp.addPlotScatter("Admitted", admitted.getColumn(0).asArray(), admitted.getColumn(1).asArray());
-        disp.addPlotScatter("Not admitted", notAdmitted.getColumn(0).asArray(), notAdmitted.getColumn(1).asArray());
-        disp.saveImage("./target/Ex2admissionData.png");
+        Plot2DPanel panel = disp.createPlotPanel("Exam 1 score", "Exam 2 score", null);
+        panel.addScatterPlot("Admitted", admitted.getColumn(0).asArray(), admitted.getColumn(1).asArray());
+        panel.addScatterPlot("Not admitted", notAdmitted.getColumn(0).asArray(), notAdmitted.getColumn(1).asArray());
+        disp.saveImage(panel, "./target/Ex2admissionData.png");
     }
 
     @Test
@@ -86,7 +88,7 @@ public class Ex2Test {
     }
 
     @Test
-    public void testPlotDecisionBoundary() {
+    public void testPlotDecisionBoundary() throws IOException {
         TrainingSet train = new TrainingSet()
                 .setModelCalculator(new LogisticModel())
                 .setX(X)
@@ -100,12 +102,11 @@ public class Ex2Test {
         double[] v1 = new double[]{30, 60, 100}; // two points would be enough for a straight line, use 3 just for fun
         double[] v2 = new double[]{f.eval(v1[0]), f.eval(v1[1]), f.eval(v1[2])};
 
-        DisplayUtil disp = new DisplayUtil();
-        disp.createPlotPanel("exam 1 score", "exam 2 score");
-        disp.addPlotScatter("Admitted", admitted.getColumn(0).asArray(), admitted.getColumn(1).asArray());
-        disp.addPlotScatter("Not admitted", notAdmitted.getColumn(0).asArray(), notAdmitted.getColumn(1).asArray());
-        disp.addPlotLine("Decision boundary", v1, v2);
-        disp.saveImage("./target/Ex2AdmissionAndDecisionBoundary.png");
+        Plot2DPanel panel = disp.createPlotPanel("exam 1 score", "exam 2 score", null);
+        panel.addScatterPlot("Admitted", admitted.getColumn(0).asArray(), admitted.getColumn(1).asArray());
+        panel.addScatterPlot("Not admitted", notAdmitted.getColumn(0).asArray(), notAdmitted.getColumn(1).asArray());
+        panel.addLinePlot("Decision boundary", v1, v2);
+        disp.saveImage(panel, "./target/Ex2AdmissionAndDecisionBoundary.png");
     }
 
     @Test

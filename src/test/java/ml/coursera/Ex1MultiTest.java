@@ -11,6 +11,9 @@ import ml.vector.SimpleMatrixFactory;
 import ml.vector.Statistics;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.math.plot.Plot2DPanel;
+
+import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
 
@@ -85,25 +88,25 @@ public class Ex1MultiTest {
     }
 
     @Test
-    public void testDifferentAlpha() {
+    public void testDifferentAlpha() throws IOException {
         TrainingSet trainingSet = new TrainingSet()
                 .setModelCalculator(new LinearModel())
                 .setX(X).setY(y)
                 .setXTransformations(true, true, null)
                 .setMatrixFactory(factory);
 
-        displayUtil.createPlotPanel("iterations", "cost");
-        train(0.01, 80, trainingSet);
-        train(0.03, 80, trainingSet);
-        train(0.1, 80, trainingSet);
-        train(0.3, 80, trainingSet);
-        displayUtil.saveImage("./target/Ex1MultiAlpha.png");
+        Plot2DPanel panel = displayUtil.createPlotPanel("iterations", "cost", null);
+        train(0.01, 80, trainingSet, panel);
+        train(0.03, 80, trainingSet, panel);
+        train(0.1, 80, trainingSet, panel);
+        train(0.3, 80, trainingSet, panel);
+        displayUtil.saveImage(panel, "./target/Ex1MultiAlpha.png");
     }
 
-    private void train(double alpha, int numIter, TrainingSet trainingSet) {
+    private void train(double alpha, int numIter, TrainingSet trainingSet, Plot2DPanel panel) {
         SimpleGradientDescent regression = new SimpleGradientDescent(trainingSet);
         regression.train(alpha, numIter, true, factory.createMatrix(trainingSet.getThetaSize(), 1));
-        displayUtil.addPlotLine("alpha=" + alpha, regression.getCostHistory());
+        panel.addLinePlot("alpha=" + alpha, regression.getCostHistory());
     }
 
 }

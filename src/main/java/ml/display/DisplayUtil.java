@@ -22,62 +22,47 @@ import java.util.*;
  */
 public class DisplayUtil {
 
-    private JFrame frame;
-    private JPanel panel;
-
-    public void createPlotPanel(String xLabel, String yLabel) {
+    public Plot2DPanel createPlotPanel(String xLabel, String yLabel, Dimension preferredSize) {
         Plot2DPanel plot2DPanel = new Plot2DPanel("North");
-        plot2DPanel.setPreferredSize(new Dimension(600, 400));
+        plot2DPanel.setPreferredSize(preferredSize != null ? preferredSize : new Dimension(600, 400));
         if (xLabel != null) {
             plot2DPanel.setAxisLabel(0, xLabel);
         }
         if (yLabel != null) {
             plot2DPanel.setAxisLabel(1, yLabel);
         }
-        panel = plot2DPanel;
+        return plot2DPanel;
     }
 
-    public void displayImageGrid(double[][] data, int imgWidth, int imgHeight, int pixelSize) {
+    public JPanel createImageGrid(double[][] data, int imgWidth, int imgHeight, int pixelSize) {
         int numCells = data.length;
         int numRows = (int) Math.sqrt(numCells);
         int numCols = numCells / numRows;
         if (numRows * numCols < numCells) numRows++;
 
-        panel = new JPanel();
+        JPanel panel = new JPanel();
         panel.setLayout(new GridLayout(numRows, numCols, 2, 2));
         for (double[] sample : data) {
             panel.add(new GrayScaleImage(sample, imgWidth, imgHeight, pixelSize));
         }
+
+        return panel;
     }
 
-    public void addPlotFunction(String name, double fromX, double toX, FunctionEvaluator function) {
-        int numPoints = 1000;
+    public double[][] getFunctionPoints(double fromX, double toX, int numPoints, FunctionEvaluator function) {
         double step = (toX - fromX) / numPoints;
 
-        double x[] = new double[numPoints];
-        double y[] = new double[numPoints];
+        double[][] res = new double[numPoints][2];
 
         for (int i = 0; i < numPoints; i++) {
-            x[i] = i == 0 ? fromX : x[i - 1] + step;
-            y[i] = function.eval(x[i]);
+            res[i][0] = fromX + step * i;
+            res[i][1] = function.eval(res[i][0]);
         }
 
-        ((Plot2DPanel)panel).addLinePlot(name, x, y);
+        return res;
     }
 
-    public void addPlotScatter(String name, double[] x, double[] y) {
-        ((Plot2DPanel) panel).addScatterPlot(name, x, y);
-    }
-
-    public void addPlotLine(String name, double[] values) {
-        ((Plot2DPanel)panel).addLinePlot(name, values);
-    }
-
-    public void addPlotLine(String name, double[] x, double[] y) {
-        ((Plot2DPanel)panel).addLinePlot(name, x, y);
-    }
-
-    public void addPlotContour(String name, GridDimension xGrid, GridDimension yGrid, ContourFunction f) {
+    public double[][] getContourPoints(GridDimension xGrid, GridDimension yGrid, ContourFunction f) {
         double stepX = (xGrid.max - xGrid.min) / xGrid.numSteps;
         double stepY = (yGrid.max - yGrid.min) / yGrid.numSteps;
 
@@ -119,7 +104,7 @@ public class DisplayUtil {
                 sorted.add(0, point);
         }
 
-        ((Plot2DPanel)panel).addLinePlot(name, sorted.toArray(new double[sorted.size()][2]));
+        return sorted.toArray(new double[sorted.size()][2]);
     }
 
     private double distance(double[] p1, double[] p2) {
@@ -135,40 +120,29 @@ public class DisplayUtil {
         }
     }
 
-    public void showFrame(String name) {
+    public JFrame showFrame(String name, JPanel contentPanel) {
         JFrame frame = new JFrame(name);
-        frame.setContentPane(panel);
+        frame.setContentPane(contentPanel);
         frame.pack();
         frame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         frame.setVisible(true);
-        this.frame = frame;
+        return frame;
     }
 
-    public void closeFrame() {
-        if (frame != null) {
-            frame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
-            frame = null;
-            panel = null;
-        }
+    public void closeFrame(JFrame frame) {
+        frame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
     }
 
-    public void saveImage(String file) {
-        frame = new JFrame("");
-        frame.setContentPane(panel);
+    public void saveImage(JPanel contentPanel, String file) throws IOException {
+        JFrame frame = new JFrame("");
+        frame.setContentPane(contentPanel);
         frame.pack();
 
-        BufferedImage image = new BufferedImage(panel.getWidth(), panel.getHeight(), BufferedImage.TYPE_INT_RGB);
+        BufferedImage image = new BufferedImage(contentPanel.getWidth(), contentPanel.getHeight(), BufferedImage.TYPE_INT_RGB);
         Graphics2D graphics = image.createGraphics();
-        panel.printAll(graphics);
+        contentPanel.printAll(graphics);
         graphics.dispose();
 
-        try {
-            ImageIO.write(image, "png", new File(file));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } finally {
-            frame = null;
-            panel = null;
-        }
+        ImageIO.write(image, "png", new File(file));
     }
 }

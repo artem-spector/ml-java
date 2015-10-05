@@ -10,6 +10,9 @@ import ml.vector.MatrixFactory;
 import ml.vector.SimpleMatrixFactory;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.math.plot.Plot2DPanel;
+
+import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -48,17 +51,17 @@ public class Ex1Test {
     }
 
     @Test
-    public void testPlotTrainingData() {
+    public void testPlotTrainingData() throws IOException {
         Matrix X = allData.selectColumns(0);
         Matrix y = allData.selectColumns(1);
 
-        displayUtil.createPlotPanel("Population in 10,000s", "Profit in $10,000s");
-        displayUtil.addPlotScatter("Profit vs. population", X.getColumn(0).asArray(), y.getColumn(0).asArray());
-        displayUtil.saveImage("./target/Ex1load.png");
+        Plot2DPanel panel = displayUtil.createPlotPanel("Population in 10,000s", "Profit in $10,000s", null);
+        panel.addScatterPlot("Profit vs. population", X.getColumn(0).asArray(), y.getColumn(0).asArray());
+        displayUtil.saveImage(panel, "./target/Ex1load.png");
     }
 
     @Test
-    public void testSimpleGradientDescent() {
+    public void testSimpleGradientDescent() throws IOException {
         Matrix X = allData.selectColumns(0);
         Matrix y = allData.selectColumns(1);
 
@@ -77,10 +80,10 @@ public class Ex1Test {
         assertEquals(-3.630291, finalTheta.get(0, 0), 1e-6);
         assertEquals(1.166362, finalTheta.get(1, 0), 1e-6);
 
-        displayUtil.createPlotPanel("Population in 10,000s", "Profit in $10,000s");
+        Plot2DPanel panel = displayUtil.createPlotPanel("Population in 10,000s", "Profit in $10,000s", null);
         double[] x = X.getColumn(0).asArray();
-        displayUtil.addPlotScatter("Profit vs. population", x, y.getColumn(0).asArray());
-        displayUtil.addPlotLine("Linear regression", x, train.getHypothesis(finalTheta).getColumn(0).asArray());
-        displayUtil.saveImage("./target/Ex1Regression.png");
+        panel.addScatterPlot("Profit vs. population", x, y.getColumn(0).asArray());
+        panel.addLinePlot("Linear regression", x, train.getHypothesis(finalTheta).getColumn(0).asArray());
+        displayUtil.saveImage(panel, "./target/Ex1Regression.png");
     }
 }

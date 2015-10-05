@@ -1,6 +1,10 @@
 package ml.display;
 
 import org.junit.Test;
+import org.math.plot.Plot2DPanel;
+
+import java.awt.*;
+import java.io.IOException;
 
 /**
  * TODO: Document!
@@ -10,27 +14,33 @@ import org.junit.Test;
  */
 public class ContourTest {
 
+    private static DisplayUtil disp = new DisplayUtil();
+
     @Test
-    public void testContours() {
-        DisplayUtil disp = new DisplayUtil();
-        disp.createPlotPanel("x", "y");
+    public void testContours() throws IOException {
+        Plot2DPanel panel = disp.createPlotPanel("x", "y", new Dimension(600, 600));
 
         GridDimension gridDimension = new GridDimension(-1, 1, 1000);
-        disp.addPlotContour("circle 1", gridDimension, gridDimension, (x, y) -> Math.abs(x * x + y * y - 1) <= 5e-4);
+        double[][] points = disp.getContourPoints(gridDimension, gridDimension, (x, y) -> Math.abs(x * x + y * y - 1) <= 5e-4);
+        panel.addLinePlot("x^2 + y^2 = 1", points);
 
         gridDimension = new GridDimension(-2, 2, 1000);
-        disp.addPlotContour("y=x^2", gridDimension, gridDimension, (x, y) -> Math.abs(x * x - y) <= 5e-4);
+        points = disp.getContourPoints(gridDimension, gridDimension, (x, y) -> Math.abs(x * x - y) <= 5e-4);
+        panel.addLinePlot("y = x^2", points);
 
         gridDimension = new GridDimension(-2, 2, 1000);
-        disp.addPlotContour("y=-x^2", gridDimension, gridDimension, (x, y) -> Math.abs(-x * x - y) <= 5e-4);
+        points = disp.getContourPoints(gridDimension, gridDimension, (x, y) -> Math.abs(-x * x - y) <= 5e-4);
+        panel.addLinePlot("y = -x^2", points);
 
         gridDimension = new GridDimension(-2, 2, 1000);
-        disp.addPlotContour("x=y^2", gridDimension, gridDimension, (x, y) -> Math.abs(y * y - x) <= 5e-4);
+        points = disp.getContourPoints(gridDimension, gridDimension, (x, y) -> Math.abs(y * y - x) <= 5e-4);
+        panel.addLinePlot("x = y^2", points);
 
         gridDimension = new GridDimension(-2, 2, 1000);
-        disp.addPlotContour("x=-y^2", gridDimension, gridDimension, (x, y) -> Math.abs(-y * y - x) <= 5e-4);
+        points = disp.getContourPoints(gridDimension, gridDimension, (x, y) -> Math.abs(-y * y - x) <= 5e-4);
+        panel.addLinePlot("x = -y^2", points);
 
-        disp.saveImage("./target/testContours.png");
+        disp.saveImage(panel, "./target/testContours.png");
     }
 
 }
