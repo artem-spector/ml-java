@@ -1,0 +1,116 @@
+package coursera.ml;
+
+import edu.stanford.nlp.optimization.QNMinimizer;
+import org.artem.tools.DataLoadUtil;
+import org.artem.tools.display.ContourFunction;
+import org.artem.tools.display.DisplayUtil;
+import org.artem.tools.display.GridDimension;
+import org.artem.tools.regression.LogisticModel;
+import org.artem.tools.regression.PolynomialFeatures;
+import org.artem.tools.regression.TrainingSet;
+import org.artem.tools.vector.Matrix;
+import org.artem.tools.vector.MatrixFactory;
+import org.artem.tools.vector.SimpleMatrixFactory;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.math.plot.Plot2DPanel;
+
+import java.io.IOException;
+
+import static org.junit.Assert.assertEquals;
+
+/**
+ * TODO: Document!
+ *
+ * @author artem
+ *         Date: 9/27/15
+ */
+public class Ex2RegTest {
+
+    private static DisplayUtil disp = new DisplayUtil();
+    private static MatrixFactory factory = new SimpleMatrixFactory();
+    private static Matrix allData;
+
+    private static Matrix X;
+    private static Matrix y;
+
+    @BeforeClass
+    public static void loadData() {
+        DataLoadUtil dataLoadUtil = new DataLoadUtil();
+        allData = dataLoadUtil.readCSV("machine-learning-ex2/ex2/ex2data2.txt", factory);
+        X = allData.selectColumns(0, 1);
+        y = allData.selectColumns(2);
+    }
+
+    @Test
+    public void plotInitialData() throws IOException {
+        disp.saveImage(plotTrainingData(), "./target/Ex2RegTrainingData.png");
+    }
+
+    @Test
+    public void testPolynomialFeatures() {
+        TrainingSet train = new TrainingSet()
+                .setModelCalculator(new LogisticModel())
+                .setX(X)
+                .setXTransformations(true, false, new PolynomialFeatures(new int[]{0, 1}, 6))
+                .setY(y)
+                .setMatrixFactory(factory);
+        int numFeatures = train.getThetaSize();
+        System.out.printf("After adding polynomial features of 6 degree, the number of features is %d%n", numFeatures);
+        assertEquals(28, numFeatures);
+
+        Matrix initialTheta = factory.createMatrix(numFeatures, 1);
+        double initialCost = train.getCost(initialTheta);
+        System.out.printf("Cost at initial theta (zeros): %f %n", initialCost);
+        assertEquals(0.693147, initialCost, 1e-6);
+    }
+
+    @Test
+    public void testRegularization() throws IOException {
+        PolynomialFeatures polynomialFeatures = new PolynomialFeatures(new int[]{0, 1}, 6);
+        TrainingSet train = new TrainingSet()
+                .setModelCalculator(new LogisticModel())
+                .setX(X)
+                .setXTransformations(true, false, polynomialFeatures)
+                .setRegularization(1)
+                .setY(y)
+                .setMatrixFactory(factory);
+        Matrix initialTheta = factory.createMatrix(train.getThetaSize(), 1);
+        Matrix finalTheta = minimize(train, initialTheta);
+
+        Matrix p = train.predict(finalTheta, X).applyFunction(x -> x >= 0.5 ? 1 : 0);
+        double correct = p.subtract(y).applyFunction(x -> x == 0 ? 1 : 0).getColumn(0).sum();
+        double accuracy = (correct / y.numRows()) * 100;
+        System.out.printf("Train accuracy %f %n", accuracy);
+        assertEquals(83.050847, accuracy, 1e-6);
+
+        Plot2DPanel panel = plotTrainingData();
+        plotDecisionBoundary(train, finalTheta, panel);
+        disp.saveImage(panel, "./target/Ex2RegDecisionBoundary.png");
+    }
+
+    private Matrix minimize(TrainingSet trainingSet, Matrix initialTheta) {
+        QNMinimizer minimizer = new QNMinimizer(10, true);
+        minimizer.shutUp();
+        double[] minTheta = minimizer.minimize(trainingSet, 1e-5, initialTheta.getColumn(0).asArray(), 400);
+        return factory.createMatrix(minTheta.length, 1, minTheta);
+    }
+
+    private Plot2DPanel plotTrainingData() {
+        Matrix passed = allData.selectRows(row -> row[2] == 1);
+        Matrix notPassed = allData.selectRows(row -> row[2] == 0);
+
+        Plot2DPanel panel = disp.createPlotPanel("Test 1", "Test 2", null);
+        panel.addScatterPlot("y=1", passed.getColumn(0).asArray(), passed.getColumn(1).asArray());
+        panel.addScatterPlot("y=0", notPassed.getColumn(0).asArray(), notPassed.getColumn(1).asArray());
+
+        return panel;
+    }
+
+    private void plotDecisionBoundary(TrainingSet trainingSet, Matrix theta, Plot2DPanel panel) {
+        GridDimension gridDimension = new GridDimension(-1, 1.5, 800);
+        ContourFunction f = (x, y) -> Math.abs(trainingSet.predictSingle(theta, new double[]{x,y}) - 0.5) <= 1e-3 ;
+        double[][] contourPoints = disp.getContourPoints(gridDimension, gridDimension, f);
+        panel.addLinePlot("Decision boundary", contourPoints);
+    }
+}
