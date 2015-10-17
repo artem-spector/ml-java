@@ -3,11 +3,9 @@ package coursera.ml;
 import com.jmatio.io.MatFileReader;
 import com.jmatio.types.MLArray;
 import com.jmatio.types.MLDouble;
-import edu.stanford.nlp.optimization.QNMinimizer;
 import org.artem.tools.ArrayUtil;
 import org.artem.tools.display.DisplayUtil;
-import org.artem.tools.regression.LogisticModel;
-import org.artem.tools.regression.TrainingSet;
+import org.artem.tools.regression.*;
 import org.artem.tools.vector.Matrix;
 import org.artem.tools.vector.MatrixFactory;
 import org.artem.tools.vector.SimpleMatrixFactory;
@@ -55,37 +53,46 @@ public class TestEx3 {
     @Test
     public void testOneVsAll() {
         int numLabels = 10;
-        double[][] allTheta = new double[numLabels][];
+        Predictor[] predictors = new Predictor[numLabels];
 
         TrainingSet trainingSet = new TrainingSet()
                 .setModelCalculator(new LogisticModel())
                 .setX(X)
-                .setXTransformations(true, false, null).setRegularization(0.1)
+                .setXTransformation(new XTransformation(true, null, null))
+                .setRegularization(0.1)
                 .setMatrixFactory(factory);
         for (int i = 0; i < numLabels; i++) {
-            allTheta[i] = trainLabel(i + 1, trainingSet);
+            predictors[i] = trainLabel(i + 1, trainingSet);
         }
 
+        Matrix[] labelPredictions = new Matrix[numLabels];
+        for (int i = 0; i < numLabels; i++)
+            labelPredictions[i] = predictors[i].predict(null, X);
+
         double[] predictedLabels = new double[X.numRows()];
-        Matrix predictions = X.addOnesColumn().multiply(factory.createMatrix(allTheta).transpose());
-        for (int i = 0; i < predictions.numRows(); i++) {
-            predictedLabels[i] = ArrayUtil.getIndexOfMax(predictions.getRow(i).asArray()) + 1;
+        for (int i = 0; i < predictedLabels.length; i++) {
+            double maxProbability = 0;
+            predictedLabels[i] = -1;
+            for (int j = 0; j < numLabels; j++) {
+                double p = labelPredictions[j].get(i, 0);
+                if (p > maxProbability) {
+                    maxProbability = p;
+                    predictedLabels[i] = j + 1;
+                }
+            }
         }
+
         double correctPredictions = factory.createMatrix(predictedLabels.length, 1, predictedLabels).subtract(y)
                 .applyFunction(v -> v == 0 ? 1 : 0).getColumn(0).sum();
         double accuracy = correctPredictions / X.numRows() * 100;
         System.out.println("Training set accuracy: " + accuracy);
     }
 
-    private double[] trainLabel(int label, TrainingSet trainingSet) {
+    private Predictor trainLabel(int label, TrainingSet trainingSet) {
         System.out.println("Training label " + label);
-        trainingSet.setY(y.applyFunction(val -> val == label ? 1 : 0));
-        double[] initTheta = new double[trainingSet.getThetaSize()];
-
-        QNMinimizer minimizer = new QNMinimizer(10, true);
-        minimizer.shutUp();
-        double[] minTheta = minimizer.minimize(trainingSet, 1e-5, initTheta);
-        System.out.println("Cost: " + trainingSet.getCost(factory.createMatrix(minTheta.length, 1, minTheta)));
-        return minTheta;
+        Trainer trainer = new Trainer(trainingSet, y.applyFunction(val -> val == label ? 1 : 0));
+        Predictor predictor = trainer.train(false);
+        System.out.println("Cost: " + trainer.getFinalCost());
+        return predictor;
     }
 }

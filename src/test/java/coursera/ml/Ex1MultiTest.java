@@ -5,6 +5,7 @@ import org.artem.tools.display.DisplayUtil;
 import org.artem.tools.regression.LinearModel;
 import org.artem.tools.regression.SimpleGradientDescent;
 import org.artem.tools.regression.TrainingSet;
+import org.artem.tools.regression.XTransformation;
 import org.artem.tools.vector.Matrix;
 import org.artem.tools.vector.MatrixFactory;
 import org.artem.tools.vector.SimpleMatrixFactory;
@@ -60,29 +61,31 @@ public class Ex1MultiTest {
         Matrix normX = X.normalize(normalization);
         System.out.println("First 10 examples from normalized dataset:");
         for (int i = 0; i < 10; i++) {
-            double[] row = X.getRow(i).asArray();
-            for (int j = 0; j < X.numColumns(); j++) {
+            double[] row = normX.getRow(i).asArray();
+            for (int j = 0; j < normX.numColumns(); j++) {
                 System.out.printf("%+.4e\t", row[j]);
             }
             System.out.printf("%.0f%n", y.get(i, 0));
         }
 
+        LinearModel linearModel = new LinearModel();
+        XTransformation transformation = new XTransformation(true, normalization, null);
         TrainingSet train = new TrainingSet()
-                .setModelCalculator(new LinearModel())
-                .setX(X).setXTransformations(true, true, null)
-                .setY(y)
+                .setModelCalculator(linearModel)
+                .setX(X)
+                .setXTransformation(transformation)
                 .setMatrixFactory(factory);
-        SimpleGradientDescent regression = new SimpleGradientDescent(train);
-        Matrix finalTheta = regression.train(0.01, 400, false, factory.createMatrix(normX.numColumns() + 1, 1));
+        SimpleGradientDescent regression = new SimpleGradientDescent(train, y);
+        Matrix finalTheta = regression.train(0.01, 400, false, factory.createMatrix(train.getThetaSize(), 1));
         System.out.println("Theta computed from gradient descent: " + finalTheta);
 
         double size = 1650;
         double bedrooms = 3;
         Matrix inputData = factory.createMatrix(1, 2, size, bedrooms);
         System.out.println("Input data: " + inputData);
-        Matrix normInputData = inputData.normalize(normalization).addOnesColumn();
+        Matrix normInputData = transformation.transform(inputData);
         System.out.println("Normalized input data with bias column: " + normInputData);
-        double predictedPrice = train.predictSingle(finalTheta, new double[]{size, bedrooms});
+        double predictedPrice = linearModel.calculateHypothesis(finalTheta, normInputData).get(0, 0);
         System.out.printf("Predicted price of a %.0f sq-ft %.0f br house : $%.4f", size, bedrooms, predictedPrice);
         assertEquals(289314.620338, predictedPrice, 1e-5);
     }
@@ -91,8 +94,8 @@ public class Ex1MultiTest {
     public void testDifferentAlpha() throws IOException {
         TrainingSet trainingSet = new TrainingSet()
                 .setModelCalculator(new LinearModel())
-                .setX(X).setY(y)
-                .setXTransformations(true, true, null)
+                .setX(X)
+                .setXTransformation(new XTransformation(true, X.calculateColumnStatistics(), null))
                 .setMatrixFactory(factory);
 
         Plot2DPanel panel = displayUtil.createPlotPanel("iterations", "cost", null);
@@ -104,7 +107,7 @@ public class Ex1MultiTest {
     }
 
     private void train(double alpha, int numIter, TrainingSet trainingSet, Plot2DPanel panel) {
-        SimpleGradientDescent regression = new SimpleGradientDescent(trainingSet);
+        SimpleGradientDescent regression = new SimpleGradientDescent(trainingSet, y);
         regression.train(alpha, numIter, true, factory.createMatrix(trainingSet.getThetaSize(), 1));
         panel.addLinePlot("alpha=" + alpha, regression.getCostHistory());
     }

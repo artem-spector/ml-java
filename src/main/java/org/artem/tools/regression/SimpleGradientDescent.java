@@ -11,11 +11,13 @@ import org.artem.tools.vector.Matrix;
 public class SimpleGradientDescent {
 
     private TrainingSet trainingSet;
+    private Matrix y;
 
     private double[] costHistory;
 
-    public SimpleGradientDescent(TrainingSet trainingSet) {
+    public SimpleGradientDescent(TrainingSet trainingSet, Matrix y) {
         this.trainingSet = trainingSet;
+        this.y = y;
     }
 
     public Matrix train(double alpha, int maxIter, boolean keepCostHistory, Matrix initialTheta) {
@@ -23,11 +25,11 @@ public class SimpleGradientDescent {
         costHistory = keepCostHistory ? new double[maxIter] : null;
 
         for (int i = 0; i < maxIter; i++) {
-            Matrix gradient = trainingSet.getGradient(theta);
+            Matrix gradient = trainingSet.getGradient(theta, y);
             theta = theta.subtract(gradient.applyFunction(x -> x * alpha));
 
             if (keepCostHistory) {
-                double cost = trainingSet.getCost(theta);
+                double cost = trainingSet.getCost(theta, y);
                 costHistory[i] = cost;
             }
         }

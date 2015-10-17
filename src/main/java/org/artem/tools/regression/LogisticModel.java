@@ -20,7 +20,7 @@ public class LogisticModel implements RegressionModel {
     }
 
     @Override
-    public double calculateCost(Matrix theta, Matrix X, Matrix y, Matrix h) {
+    public double calculateCost(Matrix y, Matrix h) {
         Matrix logH = h.applyFunction(LOG_FUNCTION);
         Matrix logOneMinusH = h.applyFunction(x -> 1 - x).applyFunction(LOG_FUNCTION);
         Matrix part1 = y.applyFunction(x -> -x).multiplyElements(logH.getColumn(0));

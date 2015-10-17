@@ -5,6 +5,7 @@ import org.artem.tools.display.DisplayUtil;
 import org.artem.tools.regression.LinearModel;
 import org.artem.tools.regression.SimpleGradientDescent;
 import org.artem.tools.regression.TrainingSet;
+import org.artem.tools.regression.XTransformation;
 import org.artem.tools.vector.Matrix;
 import org.artem.tools.vector.MatrixFactory;
 import org.artem.tools.vector.SimpleMatrixFactory;
@@ -65,16 +66,21 @@ public class Ex1Test {
         Matrix X = allData.selectColumns(0);
         Matrix y = allData.selectColumns(1);
 
-        TrainingSet train = new TrainingSet().setX(X).setXTransformations(true, false, null).setY(y).setModelCalculator(new LinearModel());
+        LinearModel model = new LinearModel();
+        XTransformation transformation = new XTransformation(true, null, null);
+        TrainingSet train = new TrainingSet()
+                .setX(X)
+                .setXTransformation(transformation)
+                .setModelCalculator(model);
+
         Matrix initialTheta = matrixFactory.createMatrix(train.getThetaSize(), 1);
-        double initialCost = train.getCost(initialTheta);
+        double initialCost = model.calculateCost(y, model.calculateHypothesis(initialTheta, transformation.transform(X)));
         System.out.println("Cost at initial theta (zeros): " + initialCost);
         assertEquals("Initial cost as expected", 32.073, initialCost, 1e-3);
-        System.out.println("Gradient at initial theta (zeros): " + train.getGradient(initialTheta));
 
-        SimpleGradientDescent simpleRegression = new SimpleGradientDescent(train);
+        SimpleGradientDescent simpleRegression = new SimpleGradientDescent(train, y);
         Matrix finalTheta = simpleRegression.train(0.01, 1500, true, initialTheta);
-        double finalCost = train.getCost(finalTheta);
+        double finalCost = model.calculateCost(y, model.calculateHypothesis(finalTheta, transformation.transform(X)));
         System.out.println("Cost at final theta: " + finalCost);
         System.out.println("Final theta: " + finalTheta);
         assertEquals(-3.630291, finalTheta.get(0, 0), 1e-6);

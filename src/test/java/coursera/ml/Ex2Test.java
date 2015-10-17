@@ -1,12 +1,9 @@
 package coursera.ml;
 
-import edu.stanford.nlp.optimization.QNMinimizer;
 import org.artem.tools.DataLoadUtil;
 import org.artem.tools.FunctionEvaluator;
 import org.artem.tools.display.DisplayUtil;
-import org.artem.tools.regression.LogisticModel;
-import org.artem.tools.regression.SimpleGradientDescent;
-import org.artem.tools.regression.TrainingSet;
+import org.artem.tools.regression.*;
 import org.artem.tools.vector.Matrix;
 import org.artem.tools.vector.MatrixFactory;
 import org.artem.tools.vector.SimpleMatrixFactory;
@@ -57,31 +54,28 @@ public class Ex2Test {
 
     @Test
     public void testSimpleVsQNMinimizer() {
-        TrainingSet train = new TrainingSet()
+        TrainingSet trainingSet = new TrainingSet()
                 .setModelCalculator(new LogisticModel())
                 .setX(X)
-                .setXTransformations(true, false, null)
-                .setY(y)
+                .setXTransformation(new XTransformation(true, null, null))
                 .setMatrixFactory(factory);
-        Matrix initialTheta = factory.createMatrix(train.getThetaSize(), 1);
-        double initialCost = train.getCost(initialTheta);
+        Matrix initialTheta = factory.createMatrix(trainingSet.getThetaSize(), 1);
+        double initialCost = trainingSet.getCost(initialTheta, y);
         System.out.printf("Cost at initial theta (zeros) %f %n", initialCost);
-        System.out.println("Gradient at initial theta: " + train.getGradient(initialTheta));
+        System.out.println("Gradient at initial theta: " + trainingSet.getGradient(initialTheta, y));
         assertEquals(0.69314, initialCost, 1e-5);
 
-        SimpleGradientDescent simple = new SimpleGradientDescent(train);
-
+        SimpleGradientDescent simple = new SimpleGradientDescent(trainingSet, y);
         int maxIter = 50000;
         Matrix finalTheta = simple.train(0.001, maxIter, true, initialTheta);
         System.out.println("Cost at final theta found by simple regression after " + maxIter + " iterations: "
-                + ": " + train.getCost(finalTheta));
+                + ": " + trainingSet.getCost(finalTheta, y));
 
-        QNMinimizer minimizer = new QNMinimizer(10, true);
-        double[] min = minimizer.minimize(train, 1e-6, initialTheta.getColumn(0).asArray(), 400);
-        finalTheta = factory.createMatrix(min.length, 1, min);
-        System.out.println("Cost at final theta found by QNMinimizer: " + train.getCost(finalTheta));
+        Trainer trainer = new Trainer(trainingSet, y);
+        Predictor predictor = trainer.train(true);
+        System.out.println("Cost at final theta found by QNMinimizer: " + trainer.getFinalCost());
 
-        double prediction = train.predictSingle(finalTheta, new double[]{45, 85});
+        double prediction = predictor.predict(null, 45, 85);
         System.out.printf("For a student with scores %d and %d, we predict an admission probability of %.6f %n", 45, 85,
                 prediction);
         assertEquals(0.776289, prediction, 1e-6);
@@ -89,15 +83,10 @@ public class Ex2Test {
 
     @Test
     public void testPlotDecisionBoundary() throws IOException {
-        TrainingSet train = new TrainingSet()
-                .setModelCalculator(new LogisticModel())
-                .setX(X)
-                .setXTransformations(true, false, null)
-                .setY(y)
-                .setMatrixFactory(factory);
-        double[] theta = minimizeTheta(train);
+        Predictor predictor = train();
 
         // decision boundary has probablility 0.5, the argument of sigmoid function must be 0.
+        double[] theta = predictor.getTheta().getColumn(0).asArray();
         FunctionEvaluator f = x1 -> (theta[0] + theta[1] * x1) / -theta[2];
         double[] v1 = new double[]{30, 60, 100}; // two points would be enough for a straight line, use 3 just for fun
         double[] v2 = new double[]{f.eval(v1[0]), f.eval(v1[1]), f.eval(v1[2])};
@@ -111,26 +100,20 @@ public class Ex2Test {
 
     @Test
     public void testAccuracy() {
-        TrainingSet train = new TrainingSet()
-                .setModelCalculator(new LogisticModel())
-                .setX(X)
-                .setXTransformations(true, false, null)
-                .setY(y)
-                .setMatrixFactory(factory);
-        Matrix theta = factory.createMatrix(train.getThetaSize(), 1, minimizeTheta(train));
-        Matrix h = train.getHypothesis(theta).applyFunction(x -> x >= 0.5 ? 1 : 0);
-
-        FunctionEvaluator f = v -> v == 0 ? 1 : 0;
-        double correctPredisctions = y.subtract(h).applyFunction(f).getColumn(0).sum();
-        double accuracy = (correctPredisctions / y.numRows()) * 100;
+        double accuracy = train().getPredictionAccuracy(x -> x >= 0.5 ? 1 : 0, X, y) * 100;
         System.out.println("Train accuracy: " + accuracy);
         assertEquals(89.00, accuracy, 1e-5);
     }
 
-    private double[] minimizeTheta(TrainingSet trainingSet) {
-        QNMinimizer minimizer = new QNMinimizer(10, true);
-        minimizer.shutUp();
-        return minimizer.minimize(trainingSet, 1e-6, new double[trainingSet.getThetaSize()], 400);
+    private Predictor train() {
+        TrainingSet trainingSet = new TrainingSet()
+                .setModelCalculator(new LogisticModel())
+                .setX(X)
+                .setXTransformation(new XTransformation(true, null, null))
+                .setMatrixFactory(factory);
+
+        Trainer trainer = new Trainer(trainingSet, y);
+        return trainer.train(false);
     }
 
 }

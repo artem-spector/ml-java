@@ -12,5 +12,5 @@ public interface RegressionModel {
 
     Matrix calculateHypothesis(Matrix theta, Matrix X);
 
-    double calculateCost(Matrix theta, Matrix X, Matrix y, Matrix h);
+    double calculateCost(Matrix y, Matrix h);
 }

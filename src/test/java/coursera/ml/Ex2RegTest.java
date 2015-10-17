@@ -1,13 +1,10 @@
 package coursera.ml;
 
-import edu.stanford.nlp.optimization.QNMinimizer;
 import org.artem.tools.DataLoadUtil;
 import org.artem.tools.display.ContourFunction;
 import org.artem.tools.display.DisplayUtil;
 import org.artem.tools.display.GridDimension;
-import org.artem.tools.regression.LogisticModel;
-import org.artem.tools.regression.PolynomialFeatures;
-import org.artem.tools.regression.TrainingSet;
+import org.artem.tools.regression.*;
 import org.artem.tools.vector.Matrix;
 import org.artem.tools.vector.MatrixFactory;
 import org.artem.tools.vector.SimpleMatrixFactory;
@@ -52,15 +49,14 @@ public class Ex2RegTest {
         TrainingSet train = new TrainingSet()
                 .setModelCalculator(new LogisticModel())
                 .setX(X)
-                .setXTransformations(true, false, new PolynomialFeatures(new int[]{0, 1}, 6))
-                .setY(y)
+                .setXTransformation(new XTransformation(true, null, new PolynomialFeatures(new int[]{0, 1}, 6)))
                 .setMatrixFactory(factory);
         int numFeatures = train.getThetaSize();
         System.out.printf("After adding polynomial features of 6 degree, the number of features is %d%n", numFeatures);
         assertEquals(28, numFeatures);
 
-        Matrix initialTheta = factory.createMatrix(numFeatures, 1);
-        double initialCost = train.getCost(initialTheta);
+        Trainer trainer = new Trainer(train, y);
+        double initialCost = trainer.getInitialCost();
         System.out.printf("Cost at initial theta (zeros): %f %n", initialCost);
         assertEquals(0.693147, initialCost, 1e-6);
     }
@@ -71,29 +67,22 @@ public class Ex2RegTest {
         TrainingSet train = new TrainingSet()
                 .setModelCalculator(new LogisticModel())
                 .setX(X)
-                .setXTransformations(true, false, polynomialFeatures)
+                .setXTransformation(new XTransformation(true, null, polynomialFeatures))
                 .setRegularization(1)
-                .setY(y)
                 .setMatrixFactory(factory);
-        Matrix initialTheta = factory.createMatrix(train.getThetaSize(), 1);
-        Matrix finalTheta = minimize(train, initialTheta);
+        Predictor predictor = minimize(train, y);
 
-        Matrix p = train.predict(finalTheta, X).applyFunction(x -> x >= 0.5 ? 1 : 0);
-        double correct = p.subtract(y).applyFunction(x -> x == 0 ? 1 : 0).getColumn(0).sum();
-        double accuracy = (correct / y.numRows()) * 100;
+        double accuracy = predictor.getPredictionAccuracy(x -> x >= 0.5 ? 1 : 0, X, y) * 100;
         System.out.printf("Train accuracy %f %n", accuracy);
         assertEquals(83.050847, accuracy, 1e-6);
 
         Plot2DPanel panel = plotTrainingData();
-        plotDecisionBoundary(train, finalTheta, panel);
+        plotDecisionBoundary(predictor, panel);
         disp.saveImage(panel, "./target/Ex2RegDecisionBoundary.png");
     }
 
-    private Matrix minimize(TrainingSet trainingSet, Matrix initialTheta) {
-        QNMinimizer minimizer = new QNMinimizer(10, true);
-        minimizer.shutUp();
-        double[] minTheta = minimizer.minimize(trainingSet, 1e-5, initialTheta.getColumn(0).asArray(), 400);
-        return factory.createMatrix(minTheta.length, 1, minTheta);
+    private Predictor minimize(TrainingSet trainingSet, Matrix y) {
+        return new Trainer(trainingSet, y).train(false);
     }
 
     private Plot2DPanel plotTrainingData() {
@@ -107,9 +96,9 @@ public class Ex2RegTest {
         return panel;
     }
 
-    private void plotDecisionBoundary(TrainingSet trainingSet, Matrix theta, Plot2DPanel panel) {
+    private void plotDecisionBoundary(Predictor predictor, Plot2DPanel panel) {
         GridDimension gridDimension = new GridDimension(-1, 1.5, 800);
-        ContourFunction f = (x, y) -> Math.abs(trainingSet.predictSingle(theta, new double[]{x,y}) - 0.5) <= 1e-3 ;
+        ContourFunction f = (x, y) -> Math.abs(predictor.predict(null, x, y) - 0.5) <= 1e-3;
         double[][] contourPoints = disp.getContourPoints(gridDimension, gridDimension, f);
         panel.addLinePlot("Decision boundary", contourPoints);
     }

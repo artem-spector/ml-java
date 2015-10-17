@@ -16,7 +16,7 @@ public class LinearModel implements RegressionModel {
     }
 
     @Override
-    public double calculateCost(Matrix theta, Matrix X, Matrix y, Matrix h) {
+    public double calculateCost(Matrix y, Matrix h) {
         Matrix diff = h.subtract(y);
         double squareSum = diff.applyFunction(arg -> arg * arg).getColumn(0).sum();
         return squareSum / (2 * y.numRows());

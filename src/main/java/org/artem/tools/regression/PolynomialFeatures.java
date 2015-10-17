@@ -35,6 +35,10 @@ public class PolynomialFeatures {
         polynoms = res.toArray(new int[res.size()][]);
     }
 
+    int[] getSrcIdx() {
+        return srcIdx;
+    }
+
     public int numPolynoms() {
         return polynoms.length;
     }
