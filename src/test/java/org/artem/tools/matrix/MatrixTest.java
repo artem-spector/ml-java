@@ -128,8 +128,8 @@ public class MatrixTest {
         int n = src.numColumns();
 
         Matrix res = src.addOnesColumn();
-        System.out.println("Source: " + src.toString("%.0f\t"));
-        System.out.println("Res: " + res.toString("%.0f\t"));
+        System.out.println("Source: " + src.toString("%.0f\t", m, n));
+        System.out.println("Res: " + res.toString("%.0f\t", m, n));
 
         assertEquals(m, res.numRows());
         assertEquals(n + 1, res.numColumns());

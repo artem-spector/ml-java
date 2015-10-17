@@ -58,14 +58,14 @@ public interface Matrix {
             }
     }
 
-    default String toString(String format) {
+    default String toString(String format, int maxRows, int maxColumns) {
         int m = numRows();
         int n = numColumns();
         StringBuilder line = new StringBuilder().append("Matrix ").append(m).append(" by ").append(n);
         Formatter formatter = new Formatter(line);
-        for (int i = 0; i < m; i++) {
+        for (int i = 0; i < Math.min(m, maxRows); i++) {
             formatter.format("%n");
-            for (int j = 0; j < n; j++)
+            for (int j = 0; j < Math.min(n, maxColumns); j++)
                 formatter.format(format, get(i, j));
         }
         return line.toString();

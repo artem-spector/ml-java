@@ -183,7 +183,7 @@ public class SimpleMatrix implements Matrix {
 
     @Override
     public String toString() {
-        return toString("%f  ");
+        return toString("%f  ", 10, 10);
     }
 
     @Override
