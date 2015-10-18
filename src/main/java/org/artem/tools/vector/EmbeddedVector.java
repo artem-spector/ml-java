@@ -45,5 +45,10 @@ public class EmbeddedVector implements Vector {
         for (int i = 0; i < length; i++) res[i] = get(i);
         return res;
     }
+
+    @Override
+    public String toString() {
+        return toString("%f  ", 100);
+    }
 }
 

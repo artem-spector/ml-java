@@ -6,8 +6,6 @@ import org.artem.tools.vector.MatrixFactory;
 import org.artem.tools.vector.SimpleMatrixFactory;
 
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -28,9 +26,7 @@ public class HandwrittenDigitsTrainer {
 
     private Matrix trainingImages;
     private Matrix trainingLabels;
-    private Byte[] uniqueLabels;
-
-    private Predictor[] labelPredictors;
+    private Classification classification;
 
     private Matrix testImages;
     private Matrix testLabels;
@@ -47,7 +43,7 @@ public class HandwrittenDigitsTrainer {
         instance.checkTrainingAccuracy();
 
         instance.resetTimer();
-        instance.loadTtestData();
+        instance.loadTestData();
         instance.printDuration("Loading test data");
 
         instance.checkTestAccuracy();
@@ -64,9 +60,6 @@ public class HandwrittenDigitsTrainer {
 
         Future<Void> loadLabels = threadPool.submit(() -> {
             trainingLabels = readLabelMatrix("src/main/resources/mnist/train-labels-idx1-ubyte.gz", 2049);
-            Set<Byte> labelSet = new HashSet<>();
-            for (int i = 0; i < trainingLabels.numRows(); i++) labelSet.add((byte) trainingLabels.get(i, 0));
-            uniqueLabels = labelSet.toArray(new Byte[labelSet.size()]);
             System.out.println("Training labels: " + trainingLabels.numRows());
             return null;
         });
@@ -75,7 +68,7 @@ public class HandwrittenDigitsTrainer {
         loadImages.get();
     }
 
-    private void loadTtestData() throws IOException, ExecutionException, InterruptedException {
+    private void loadTestData() throws IOException, ExecutionException, InterruptedException {
         Future<Void> loadImages = threadPool.submit(() -> {
             testImages = readImageMatrix("src/main/resources/mnist/t10k-images-idx3-ubyte.gz", 2051);
             System.out.println("Test images: " + testImages.numRows());
@@ -129,41 +122,18 @@ public class HandwrittenDigitsTrainer {
                 .setXTransformation(new XTransformation(true, null, null))
                 .setRegularization(0);
 
-        int numLabels = uniqueLabels.length;
-        Future<Predictor>[] trainLabelTasks = new Future[numLabels];
-        for (int i = 0; i < numLabels; i++) {
-            byte label = uniqueLabels[i];
-            trainLabelTasks[i] = threadPool.submit(() -> trainLabel(trainingSet, label));
-        }
-
-        labelPredictors = new Predictor[numLabels];
-        for (int i = 0; i < numLabels; i++) labelPredictors[i] = trainLabelTasks[i].get();
-    }
-
-    private Predictor trainLabel(TrainingSet trainingSet, byte label) {
-        Trainer trainer = new Trainer(trainingSet, trainingLabels.applyFunction(x -> x == label ? 1 : 0));
-        Predictor predictor = trainer.train(false);
-        System.out.println("Label " + label + " cost: " + trainer.getFinalCost());
-        return predictor;
+        classification = new Classification();
+        classification.trainOneVsAll(trainingSet, trainingLabels, threadPool, 1);
     }
 
     private void checkTrainingAccuracy() {
-        System.out.println("Training accuracy");
-        checkAccuracy("\t", trainingImages, trainingLabels);
+        ClassificationAccuracy accuracy = classification.getAccuracy(trainingImages, trainingLabels);
+        System.out.println("Training accuracy: " + accuracy.getCrossLabelAccuracy() * 100);
     }
 
     private void checkTestAccuracy() {
-        System.out.println("Test set accuracy");
-        checkAccuracy("\t", testImages, testLabels);
-    }
-
-    private void checkAccuracy(String prefix, Matrix images, Matrix labels) {
-        for (int i = 0; i < uniqueLabels.length; i++) {
-            byte label = uniqueLabels[i];
-            Matrix expected = labels.applyFunction(x -> x == label ? 1 : 0);
-            double accuracy = labelPredictors[i].getPredictionAccuracy(p -> p > 0.5 ? 1 : 0, images, expected);
-            System.out.println(prefix + label + ": " + accuracy * 100 + "%");
-        }
+        ClassificationAccuracy accuracy = classification.getAccuracy(testImages, testLabels);
+        System.out.println("Test set accuracy: " + accuracy.getCrossLabelAccuracy() * 100);
     }
 
     private void resetTimer() {

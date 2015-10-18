@@ -18,22 +18,23 @@ public class Trainer implements DiffFunction {
     private final MatrixFactory matrixFactory;
 
     private double[] initTheta;
-    private double[] minTheta;
+    private double[] currentTheta;
 
     public Trainer(TrainingSet trainingSet, Matrix y) {
         this.trainingSet = trainingSet;
         matrixFactory = trainingSet.matrixFactory;
         this.y = y;
         initTheta = new double[trainingSet.getThetaSize()];
+        currentTheta = new double[initTheta.length];
     }
 
     public Predictor train(boolean verbouse) {
         QNMinimizer minimizer = new QNMinimizer(10, true);
         if (!verbouse) minimizer.shutUp();
 
-        minTheta = minimizer.minimize(this, 1e-5, initTheta);
+        minimizer.minimize(this, 1e-5, currentTheta);
 
-        Matrix theta = matrixFactory.createMatrix(trainingSet.getThetaSize(), 1, minTheta);
+        Matrix theta = matrixFactory.createMatrix(trainingSet.getThetaSize(), 1, currentTheta);
         return new Predictor(matrixFactory, trainingSet.modelCalculator, trainingSet.xTransformation, theta);
     }
 
@@ -42,7 +43,7 @@ public class Trainer implements DiffFunction {
     }
 
     public double getFinalCost() {
-        return valueAt(minTheta);
+        return valueAt(currentTheta);
     }
 
     @Override

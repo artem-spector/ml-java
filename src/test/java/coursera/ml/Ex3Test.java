@@ -15,6 +15,7 @@ import org.junit.Test;
 
 import javax.swing.*;
 import java.util.Map;
+import java.util.concurrent.Executors;
 
 /**
  * TODO: Document!
@@ -22,7 +23,7 @@ import java.util.Map;
  * @author artem
  *         Date: 9/5/15
  */
-public class TestEx3 {
+public class Ex3Test {
 
     private static DisplayUtil displayUtil = new DisplayUtil();
     private static MatrixFactory factory = new SimpleMatrixFactory();
@@ -52,47 +53,17 @@ public class TestEx3 {
 
     @Test
     public void testOneVsAll() {
-        int numLabels = 10;
-        Predictor[] predictors = new Predictor[numLabels];
-
         TrainingSet trainingSet = new TrainingSet()
                 .setModelCalculator(new LogisticModel())
                 .setX(X)
                 .setXTransformation(new XTransformation(true, null, null))
                 .setRegularization(0.1)
                 .setMatrixFactory(factory);
-        for (int i = 0; i < numLabels; i++) {
-            predictors[i] = trainLabel(i + 1, trainingSet);
-        }
 
-        Matrix[] labelPredictions = new Matrix[numLabels];
-        for (int i = 0; i < numLabels; i++)
-            labelPredictions[i] = predictors[i].predict(null, X);
-
-        double[] predictedLabels = new double[X.numRows()];
-        for (int i = 0; i < predictedLabels.length; i++) {
-            double maxProbability = 0;
-            predictedLabels[i] = -1;
-            for (int j = 0; j < numLabels; j++) {
-                double p = labelPredictions[j].get(i, 0);
-                if (p > maxProbability) {
-                    maxProbability = p;
-                    predictedLabels[i] = j + 1;
-                }
-            }
-        }
-
-        double correctPredictions = factory.createMatrix(predictedLabels.length, 1, predictedLabels).subtract(y)
-                .applyFunction(v -> v == 0 ? 1 : 0).getColumn(0).sum();
-        double accuracy = correctPredictions / X.numRows() * 100;
-        System.out.println("Training set accuracy: " + accuracy);
+        Classification classifier = new Classification();
+        classifier.trainOneVsAll(trainingSet, y, Executors.newFixedThreadPool(5));
+        ClassificationAccuracy accuracy = classifier.getAccuracy(X, y);
+        System.out.println("Training set accuracy: " + accuracy.getCrossLabelAccuracy() * 100);
     }
 
-    private Predictor trainLabel(int label, TrainingSet trainingSet) {
-        System.out.println("Training label " + label);
-        Trainer trainer = new Trainer(trainingSet, y.applyFunction(val -> val == label ? 1 : 0));
-        Predictor predictor = trainer.train(false);
-        System.out.println("Cost: " + trainer.getFinalCost());
-        return predictor;
-    }
 }

@@ -1,5 +1,7 @@
 package org.artem.tools.vector;
 
+import java.util.Formatter;
+
 /**
  * TODO: Document!
  *
@@ -86,4 +88,13 @@ public interface Vector {
 
         return new Statistics(mean, variance, std, count);
     }
+
+    default String toString(String format, int maxElements) {
+        StringBuilder line = new StringBuilder().append(type()).append(" Vector of ").append(length()).append(": ");
+        Formatter formatter = new Formatter(line);
+        for (int j = 0; j < Math.min(length(), maxElements); j++)
+            formatter.format(format, get(j));
+        return line.toString();
+    }
+
 }
