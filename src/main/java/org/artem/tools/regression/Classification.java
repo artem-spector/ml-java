@@ -64,12 +64,12 @@ public class Classification {
     }
 
     public int[] getLabels(Matrix X) {
-        Matrix probabilities = getLabelProbabilities(X);
+        Matrix labelPredictions = getLabelPredictions(X);
         int[] res = new int[X.numRows()];
         for (int i = 0; i < res.length; i++) {
-            Vector row = probabilities.getRow(i);
+            Vector row = labelPredictions.getRow(i);
             int labelIdx = row.idxMax();
-            res[i] =row.get(labelIdx) >= 0.5 ? trainedLabels[labelIdx] : -1;
+            res[i] =row.get(labelIdx) == 1 ? trainedLabels[labelIdx] : -1;
         }
         return res;
     }
@@ -89,14 +89,14 @@ public class Classification {
         return res;
     }
 
-    private Matrix getLabelProbabilities(Matrix X) {
+    private Matrix getLabelPredictions(Matrix X) {
         assert trained;
 
         Matrix res = matrixFactory.createMatrix(X.numRows(), trainedLabels.length);
         for (int j = 0; j < trainedLabels.length; j++) {
-            Matrix labelProbablities = trainedPredictors[j].predict(null, X);
+            Matrix labelPredictions = trainedPredictors[j].predict(p -> p >= 0.5 ? 1 : 0, X);
             for (int i = 0; i < res.numRows(); i++)
-                res.set(i, j, labelProbablities.get(i, 0));
+                res.set(i, j, labelPredictions.get(i, 0));
         }
         return res;
     }
@@ -105,7 +105,15 @@ public class Classification {
         y = y.applyFunction(x -> x == label ? 1 : 0);
         Trainer trainer = new Trainer(trainingSet, y);
         Predictor res = trainer.train(false);
-        System.out.println("Label " + label + " initial cost: " + trainer.getInitialCost() + "; final cost: " + trainer.getFinalCost());
+        Matrix h = trainingSet.getHypothesis(res.getTheta()).applyFunction(p -> p >= 0.5 ? 1 : 0);
+        Vector yColumn = y.getColumn(0);
+        double correctPredictions = h.multiplyElements(yColumn).getColumn(0).sum();
+
+        System.out.println("Label " + label
+                + " initial cost: " + trainer.getInitialCost()
+                + "; final cost: " + trainer.getFinalCost()
+                + "; training accuracy: " + correctPredictions / yColumn.sum() * 100
+        );
         return res;
     }
 
