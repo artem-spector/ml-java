@@ -47,7 +47,10 @@ public class Ex3Test {
         double[][] images = new double[100][];
         int[] randIndexes = new ArrayUtil().randperm(X.numRows());
         for (int i = 0; i < images.length; i++) images[i] = X.getRow(randIndexes[i]).asArray();
-        JPanel panel = displayUtil.createImageGrid(images, 20, 20, 2);
+        String[] labels = new String[images.length];
+        for (int i = 0; i < labels.length; i++) labels[i] = String.valueOf((int) y.get(randIndexes[i], 0));
+
+        JPanel panel = displayUtil.createImageGrid(images, 20, 20, 2, labels);
         displayUtil.saveImage(panel, "./target/Ex3TrainingSample.png");
     }
 

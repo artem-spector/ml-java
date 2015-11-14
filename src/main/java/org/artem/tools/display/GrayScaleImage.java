@@ -64,7 +64,7 @@ public class GrayScaleImage extends JPanel {
         if (label != null) {
             g2.setColor(Color.BLUE);
 
-            float fontSize = height * pixelSize / 5;
+            float fontSize = Math.max(9, height * pixelSize / 5);
             g2.setFont(g2.getFont().deriveFont(fontSize));
             g2.drawString(label, 0, fontSize);
         }
