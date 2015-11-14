@@ -17,6 +17,7 @@ public class GrayScaleImage extends JPanel {
     private static final ColorSpace linearRGB = ColorSpace.getInstance(ColorSpace.CS_LINEAR_RGB);
 
     private float pixels[][][];
+    private String label;
     private int width;
     private int height;
     private int pixelSize;
@@ -44,6 +45,10 @@ public class GrayScaleImage extends JPanel {
             }
     }
 
+    public void setLabel(String label) {
+        this.label = label;
+    }
+
     @Override
     public void paint(Graphics g) {
         Graphics2D g2 = (Graphics2D) g;
@@ -54,6 +59,14 @@ public class GrayScaleImage extends JPanel {
                 g.setColor(gray);
                 g2.fill(pixelShape);
             }
+        }
+
+        if (label != null) {
+            g2.setColor(Color.BLUE);
+
+            float fontSize = height * pixelSize / 5;
+            g2.setFont(g2.getFont().deriveFont(fontSize));
+            g2.drawString(label, 0, fontSize);
         }
     }
 }

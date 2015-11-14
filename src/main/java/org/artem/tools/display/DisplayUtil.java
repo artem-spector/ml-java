@@ -34,7 +34,9 @@ public class DisplayUtil {
         return plot2DPanel;
     }
 
-    public JPanel createImageGrid(double[][] data, int imgWidth, int imgHeight, int pixelSize) {
+    public JPanel createImageGrid(double[][] data, int imgWidth, int imgHeight, int pixelSize, String[] labels) {
+        assert labels == null || labels.length == data.length;
+
         int numCells = data.length;
         int numRows = (int) Math.sqrt(numCells);
         int numCols = numCells / numRows;
@@ -42,8 +44,10 @@ public class DisplayUtil {
 
         JPanel panel = new JPanel();
         panel.setLayout(new GridLayout(numRows, numCols, 2, 2));
-        for (double[] sample : data) {
-            panel.add(new GrayScaleImage(sample, imgWidth, imgHeight, pixelSize));
+        for (int i = 0; i < data.length; i++) {
+            GrayScaleImage grayScaleImage = new GrayScaleImage(data[i], imgWidth, imgHeight, pixelSize);
+            if (labels != null) grayScaleImage.setLabel(labels[i]);
+            panel.add(grayScaleImage);
         }
 
         return panel;
