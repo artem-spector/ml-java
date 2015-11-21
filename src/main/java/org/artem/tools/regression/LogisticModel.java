@@ -26,7 +26,7 @@ public class LogisticModel implements RegressionModel {
             double yi = y.get(i, 0);
             double hi = h.get(i, 0);
             double costI = yi == 0 ? -Math.log(1 - hi) : -Math.log(hi);
-            if (costI == Double.POSITIVE_INFINITY) costI = maxCost;
+            if (costI > maxCost) costI = maxCost;
             sum += costI;
         }
         return sum / y.numRows();
