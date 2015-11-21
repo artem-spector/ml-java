@@ -12,7 +12,6 @@ import org.artem.tools.vector.Matrix;
 public class LogisticModel implements RegressionModel {
 
     private static final FunctionEvaluator SIGMOID = x -> 1d / (1d + Math.exp(-x));
-    private static final FunctionEvaluator LOG_FUNCTION = x -> x == 1 ? 0 : x == -Double.MAX_VALUE ? 0 : Math.log(x);
 
     @Override
     public Matrix calculateHypothesis(Matrix theta, Matrix X) {
@@ -21,10 +20,15 @@ public class LogisticModel implements RegressionModel {
 
     @Override
     public double calculateCost(Matrix y, Matrix h) {
-        Matrix logH = h.applyFunction(LOG_FUNCTION);
-        Matrix logOneMinusH = h.applyFunction(x -> 1 - x).applyFunction(LOG_FUNCTION);
-        Matrix part1 = y.applyFunction(x -> -x).multiplyElements(logH.getColumn(0));
-        Matrix part2 = y.applyFunction(x -> 1 - x).multiplyElements(logOneMinusH.getColumn(0));
-        return part1.subtract(part2).getColumn(0).sum() / y.numRows();
+        double maxCost = Double.MAX_VALUE / y.numRows();
+        double sum = 0;
+        for (int i = 0; i < y.numRows(); i++) {
+            double yi = y.get(i, 0);
+            double hi = h.get(i, 0);
+            double costI = yi == 0 ? -Math.log(1 - hi) : -Math.log(hi);
+            if (costI == Double.POSITIVE_INFINITY) costI = maxCost;
+            sum += costI;
+        }
+        return sum / y.numRows();
     }
 }

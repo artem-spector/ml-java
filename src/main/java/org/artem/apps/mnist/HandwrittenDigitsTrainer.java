@@ -165,7 +165,7 @@ public class HandwrittenDigitsTrainer {
                 .setRegularization(0);
 
         classification = new Classification();
-        classification.trainOneVsAll(trainingSet, trainingLabels, null, 1);
+        classification.trainOneVsAll(trainingSet, trainingLabels, threadPool);
     }
 
     private void checkTrainingAccuracy() {
