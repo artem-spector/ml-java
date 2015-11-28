@@ -20,7 +20,9 @@ public class HandwrittenDigitsRecognizer {
 
     public static void main(String[] args) throws IOException {
         HandwrittenDigitsRecognizer instance = new HandwrittenDigitsRecognizer();
-        instance.readTrainedClassification("./src/main/resources/lineraRegressionTheta.mat");
+        instance.readTrainedClassification("./src/main/resources/linearRegressionTheta.mat");
+
+        new RecognizerUI().show();
     }
 
     private void readTrainedClassification(String file) throws IOException {
