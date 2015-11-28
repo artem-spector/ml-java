@@ -1,5 +1,8 @@
 package org.artem.apps.mnist;
 
+import com.jmatio.io.MatFileReader;
+import com.jmatio.io.MatFileWriter;
+import com.jmatio.types.MLArray;
 import org.artem.tools.ArrayUtil;
 import org.artem.tools.display.DisplayUtil;
 import org.artem.tools.regression.*;
@@ -8,7 +11,9 @@ import org.artem.tools.vector.MatrixFactory;
 import org.artem.tools.vector.SimpleMatrixFactory;
 
 import javax.swing.*;
+import java.io.File;
 import java.io.IOException;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -21,6 +26,8 @@ import java.util.concurrent.Future;
  *         Date: 10/5/15
  */
 public class HandwrittenDigitsTrainer {
+
+    private static List<String> MODES = Arrays.asList("train", "test");
 
     public static final MatrixFactory MATRIX_FACTORY = new SimpleMatrixFactory();
     private static ExecutorService threadPool = Executors.newFixedThreadPool(4);
@@ -37,6 +44,12 @@ public class HandwrittenDigitsTrainer {
     private DisplayUtil displayUtil = new DisplayUtil();
 
     public static void main(String[] args) throws IOException, ExecutionException, InterruptedException {
+        String mode = (args != null && args.length == 1) ? args[0] : null;
+        if (mode == null || !MODES.contains(mode)) {
+            System.out.println("usage: HandwrittenDigitsTrainer [train|test]");
+            System.exit(1);
+        }
+
         HandwrittenDigitsTrainer instance = new HandwrittenDigitsTrainer();
 //        instance.delme(100);
 
@@ -45,20 +58,36 @@ public class HandwrittenDigitsTrainer {
         instance.printImages(instance.trainingImages, "./target/MNIST_training_image_0.png", 0, 1, 2, 3);
         instance.printDuration("Loading training data");
 
-        instance.resetTimer();
-        instance.train();
-        instance.printDuration("Training");
+        if (mode.equals("train")) {
+            instance.resetTimer();
+            instance.train();
+            instance.printDuration("Training");
+            instance.saveClassification("./src/main/resources/linearRegressionTheta.mat");
+        } else {
+            instance.resetTimer();
+            instance.readClassification("./src/main/resources/linearRegressionTheta.mat");
+            instance.printDuration("Load trained classification");
+        }
+
         instance.checkTrainingAccuracy();
 
-        instance.resetTimer();
         instance.loadTestData();
-        instance.printDuration("Loading test data");
-
         instance.checkTestAccuracy();
 
         threadPool.shutdown();
     }
 
+    private void saveClassification(String file) throws IOException {
+        Collection<MLArray> mlArrays = new ArrayList<>();
+        classification.toMLData("", mlArrays);
+        new MatFileWriter().write(file, mlArrays);
+    }
+
+    private void readClassification(String file) throws IOException {
+        Map<String, MLArray> arrayMap = new MatFileReader().read(new File(file));
+        classification = new Classification();
+        classification.fromMLData("", arrayMap);
+    }
 
     private void delme(int numImages) throws IOException {
         testImages = readImageMatrix("src/main/resources/mnist/t10k-images-idx3-ubyte.gz", 2051);
