@@ -1,6 +1,7 @@
 package coursera.ml;
 
 import com.jmatio.io.MatFileReader;
+import com.jmatio.io.MatFileWriter;
 import com.jmatio.types.MLArray;
 import com.jmatio.types.MLDouble;
 import org.artem.tools.ArrayUtil;
@@ -14,8 +15,15 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import javax.swing.*;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.Executors;
+
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 
 /**
  * TODO: Document!
@@ -41,8 +49,8 @@ public class Ex3Test {
         y = factory.createMatrix(((MLDouble) content.get("y")).getArray());
         System.out.println("X: " + X.numRows() + "*" + X.numColumns());
         System.out.println("y: " + y.numRows() + "*" + y.numColumns());
-        Assert.assertEquals(X.numRows(), y.numRows());
-        Assert.assertEquals(1, y.numColumns());
+        assertEquals(X.numRows(), y.numRows());
+        assertEquals(1, y.numColumns());
 
         double[][] images = new double[100][];
         int[] randIndexes = new ArrayUtil().randperm(X.numRows());
@@ -55,7 +63,7 @@ public class Ex3Test {
     }
 
     @Test
-    public void testOneVsAll() {
+    public void testOneVsAll() throws IOException {
         TrainingSet trainingSet = new TrainingSet()
                 .setModelCalculator(new LogisticModel())
                 .setX(X)
@@ -67,6 +75,20 @@ public class Ex3Test {
         classifier.trainOneVsAll(trainingSet, y, Executors.newFixedThreadPool(5));
         ClassificationAccuracy accuracy = classifier.getAccuracy(X, y);
         System.out.println("Training set accuracy: " + accuracy.getCrossLabelAccuracy() * 100);
+
+        Classification cls1 = writeRead(classifier, new File("./target/ex3classification.mat"));
+        assertArrayEquals(classifier.getLabels(X), cls1.getLabels(X));
+    }
+
+    private Classification writeRead(Classification src, File file) throws IOException {
+        Collection<MLArray> mlArrays = new ArrayList<>();
+        src.toMLData("", mlArrays);
+        new MatFileWriter().write(file, mlArrays);
+
+        Map<String, MLArray> content = new MatFileReader(file).getContent();
+        Classification res = new Classification();
+        res.fromMLData("", content);
+        return res;
     }
 
 }

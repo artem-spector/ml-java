@@ -1,4 +1,4 @@
-package org.artem.tools;
+package org.artem.tools.file;
 
 import org.artem.tools.vector.Matrix;
 import org.artem.tools.vector.MatrixFactory;

@@ -1,8 +1,11 @@
 package org.artem.tools.regression;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import com.jmatio.types.MLArray;
+import com.jmatio.types.MLInt64;
+import org.artem.tools.file.MLExternalizable;
+
+import java.io.IOException;
+import java.util.*;
 
 /**
  * Polynoms for the given features and degree. Don't include the features themselves.
@@ -10,7 +13,7 @@ import java.util.List;
  * @author artem
  *         Date: 9/27/15
  */
-public class PolynomialFeatures {
+public class PolynomialFeatures implements MLExternalizable {
 
     private int[] srcIdx;
     private int degree;
@@ -33,6 +36,9 @@ public class PolynomialFeatures {
             if (sum <= 1) iter.remove();
         }
         polynoms = res.toArray(new int[res.size()][]);
+    }
+
+    PolynomialFeatures() {
     }
 
     int[] getSrcIdx() {
@@ -65,6 +71,43 @@ public class PolynomialFeatures {
                 val *= Math.pow(data[srcStart + srcIdx[j]], polynoms[i][j]);
             }
             data[srcStart + srcLen + i] = val;
+        }
+    }
+
+    @Override
+    public void toMLData(String prefix, Collection<MLArray> out) {
+        long[][] longValues = new long[srcIdx.length][1];
+        for (int i = 0; i < srcIdx.length; i++) longValues[i][0] = srcIdx[i];
+        out.add(new MLInt64(prefix + "srcIdx", longValues));
+
+        out.add(new MLInt64(prefix + "degree", new long[][]{{degree}}));
+
+        longValues = new long[polynoms.length][polynoms[0].length];
+        for (int i = 0; i < polynoms.length; i++)
+            for (int j = 0; j < polynoms[i].length; j++)
+                longValues[i][j] = polynoms[i][j];
+        out.add(new MLInt64(prefix + "polynoms", longValues));
+    }
+
+    @Override
+    public void fromMLData(String prefix, Map<String, MLArray> in) throws IOException {
+        try {
+            MLArray arr = in.get(prefix + "srcIdx");
+            long[][] longValues = ((MLInt64) arr).getArray();
+            srcIdx = new int[longValues.length];
+            for (int i = 0; i < longValues.length; i++) srcIdx[i] = (int) longValues[i][0];
+
+            arr = in.get(prefix + "degree");
+            degree = (int) (long) ((MLInt64)arr).get(0, 0);
+
+            arr = in.get(prefix + "polynoms");
+            longValues = ((MLInt64)arr).getArray();
+            polynoms = new int[longValues.length][longValues[0].length];
+            for (int i = 0; i < polynoms.length; i++)
+                for (int j = 0; j < polynoms[i].length; j++)
+                    polynoms[i][j] = (int) longValues[i][j];
+        } catch (Throwable e) {
+            throw new IOException("Failed to read PolynomialFeatures from Matlab data file", e);
         }
     }
 

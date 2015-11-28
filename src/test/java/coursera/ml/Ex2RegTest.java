@@ -1,6 +1,6 @@
 package coursera.ml;
 
-import org.artem.tools.DataLoadUtil;
+import org.artem.tools.file.DataLoadUtil;
 import org.artem.tools.display.ContourFunction;
 import org.artem.tools.display.DisplayUtil;
 import org.artem.tools.display.GridDimension;

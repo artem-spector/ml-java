@@ -1,6 +1,6 @@
 package coursera.ml;
 
-import org.artem.tools.DataLoadUtil;
+import org.artem.tools.file.DataLoadUtil;
 import org.artem.tools.FunctionEvaluator;
 import org.artem.tools.display.DisplayUtil;
 import org.artem.tools.regression.*;
@@ -78,7 +78,7 @@ public class Ex2Test {
         double prediction = predictor.predict(null, 45, 85);
         System.out.printf("For a student with scores %d and %d, we predict an admission probability of %.6f %n", 45, 85,
                 prediction);
-        assertEquals(0.776289, prediction, 1e-6);
+        assertEquals(0.776289, prediction, 1e-5);
     }
 
     @Test

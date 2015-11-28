@@ -1,10 +1,17 @@
 package org.artem.tools.regression;
 
+import com.jmatio.types.MLArray;
+import com.jmatio.types.MLChar;
+import com.jmatio.types.MLInt64;
+import org.artem.tools.file.MLExternalizable;
 import org.artem.tools.vector.Matrix;
 import org.artem.tools.vector.MatrixFactory;
 import org.artem.tools.vector.Vector;
 
+import java.io.IOException;
+import java.util.Collection;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -15,7 +22,7 @@ import java.util.concurrent.Future;
  * @author artem
  *         Date: 10/18/15
  */
-public class Classification {
+public class Classification implements MLExternalizable {
 
     boolean trained;
 
@@ -69,7 +76,7 @@ public class Classification {
         for (int i = 0; i < res.length; i++) {
             Vector row = labelPredictions.getRow(i);
             int labelIdx = row.idxMax();
-            res[i] =row.get(labelIdx) == 1 ? trainedLabels[labelIdx] : -1;
+            res[i] = row.get(labelIdx) == 1 ? trainedLabels[labelIdx] : -1;
         }
         return res;
     }
@@ -110,12 +117,49 @@ public class Classification {
         double correctPredictions = h.multiplyElements(yColumn).getColumn(0).sum();
 
         System.out.println("Label " + label
-                + " initial cost: " + trainer.getInitialCost()
-                + "; final cost: " + trainer.getFinalCost()
-                + "; training accuracy: " + correctPredictions / yColumn.sum() * 100
+                        + " initial cost: " + trainer.getInitialCost()
+                        + "; final cost: " + trainer.getFinalCost()
+                        + "; training accuracy: " + correctPredictions / yColumn.sum() * 100
         );
         return res;
     }
 
+    @Override
+    public void toMLData(String prefix, Collection<MLArray> out) {
+        assert trained;
 
+        out.add(new MLChar(prefix + "matrixFactory", matrixFactory.getClass().getName()));
+
+        long[] ints = new long[trainedLabels.length];
+        for (int i = 0; i < ints.length; i++) ints[i] = trainedLabels[i];
+        out.add(new MLInt64(prefix + "trainedLabels", new long[][]{ints}));
+
+        for (int i = 0; i < trainedPredictors.length; i++) {
+            trainedPredictors[i].toMLData(prefix + "trainedPredictors:" + i + ":", out);
+        }
+    }
+
+    @Override
+    public void fromMLData(String prefix, Map<String, MLArray> in) throws IOException {
+        MLArray arr;
+        try {
+            trained = true;
+
+            arr = in.get(prefix + "matrixFactory");
+            String className = ((MLChar) arr).getString(0);
+            matrixFactory = (MatrixFactory) Class.forName(className).newInstance();
+
+            arr = in.get(prefix + "trainedLabels");
+            trainedLabels = new Integer[arr.getN()];
+            for (int i = 0; i < trainedLabels.length; i++) trainedLabels[i] = ((MLInt64) arr).get(i).intValue();
+
+            trainedPredictors = new Predictor[trainedLabels.length];
+            for (int i = 0; i < trainedPredictors.length; i++) {
+                trainedPredictors[i] = new Predictor(matrixFactory);
+                trainedPredictors[i].fromMLData(prefix + "trainedPredictors:" + i + ":", in);
+            }
+        } catch (Throwable e) {
+            throw new IOException("Failed to read Classification from Matlab data file.", e);
+        }
+    }
 }

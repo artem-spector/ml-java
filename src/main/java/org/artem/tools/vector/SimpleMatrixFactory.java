@@ -24,4 +24,5 @@ public class SimpleMatrixFactory implements MatrixFactory {
     public Matrix eye(int m) {
         return SimpleMatrix.eye(m);
     }
+
 }
