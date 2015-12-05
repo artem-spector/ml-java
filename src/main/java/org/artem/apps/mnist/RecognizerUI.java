@@ -1,11 +1,12 @@
 package org.artem.apps.mnist;
 
+import org.artem.tools.display.FreehandDrawingPanel;
+import org.artem.tools.display.GrayScaleImage;
+
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
-import java.awt.event.WindowEvent;
+import java.awt.event.*;
+import java.awt.image.BufferedImage;
 
 /**
  * TODO: Document!
@@ -13,37 +14,52 @@ import java.awt.event.WindowEvent;
  * @author artem
  *         Date: 11/28/15
  */
-public class RecognizerUI implements MouseListener, MouseMotionListener {
+public class RecognizerUI implements MouseListener{
+
+    private HandwrittenDigitsRecognizer recognizer;
 
     private JFrame frame;
     private JPanel contentPanel = new JPanel();
-    private JPanel instructionsPanel = new JPanel();
+    private JPanel inputPanel = new JPanel();
     private JPanel controlsPanel = new JPanel();
     private JButton okButton = new JButton("OK");
-    private JPanel drawingPanel = new JPanel();
+    private JButton clearButton = new JButton("Clear");
+    private FreehandDrawingPanel drawingPanel = new FreehandDrawingPanel();
 
-    private boolean drawing;
-    private Point previousPoint;
+    private JPanel resultPanel = new JPanel();
+    private JPanel res1 = new JPanel();
+    private JPanel res2 = new JPanel();
 
-    public RecognizerUI() {
+    public RecognizerUI(HandwrittenDigitsRecognizer recognizer) {
+        this.recognizer = recognizer;
+
+        clearButton.addActionListener(e -> drawingPanel.clear());
+        okButton.addActionListener(e -> this.recognizer.analyzeDrawing());
+
         contentPanel.setLayout(new BorderLayout());
-        contentPanel.add(instructionsPanel, BorderLayout.NORTH);
-        contentPanel.add(controlsPanel, BorderLayout.SOUTH);
-        contentPanel.add(drawingPanel, BorderLayout.CENTER);
+        contentPanel.add(inputPanel, BorderLayout.CENTER);
+        contentPanel.add(resultPanel, BorderLayout.EAST);
+
+        inputPanel.setLayout(new BorderLayout());
+        inputPanel.add(new JLabel("Click to toggle drawing. Press OK when done."), BorderLayout.NORTH);
+        inputPanel.add(controlsPanel, BorderLayout.SOUTH);
+        inputPanel.add(drawingPanel, BorderLayout.CENTER);
 
         controlsPanel.setLayout(new BorderLayout());
-        controlsPanel.add(okButton, BorderLayout.CENTER);
-
-        instructionsPanel.setLayout(new BorderLayout());
-        instructionsPanel.add(new JLabel("Click to toggle drawing. Press OK when done."), BorderLayout.CENTER);
+        controlsPanel.add(okButton, BorderLayout.EAST);
+        controlsPanel.add(clearButton, BorderLayout.WEST);
 
         drawingPanel.setPreferredSize(new Dimension(500, 500));
         drawingPanel.setBackground(Color.WHITE);
         drawingPanel.addMouseListener(this);
-        drawingPanel.addMouseMotionListener(this);
+
+        resultPanel.setPreferredSize(new Dimension(500, 500));
+        resultPanel.setLayout(new GridLayout(1, 2));
+        resultPanel.add(res1);
+        resultPanel.add(res2);
     }
 
-    public void show() {
+    public void showFrame() {
         frame = new JFrame("Draw a digit");
         frame.setContentPane(contentPanel);
         frame.pack();
@@ -51,24 +67,36 @@ public class RecognizerUI implements MouseListener, MouseMotionListener {
         frame.setVisible(true);
     }
 
-    public void close() {
+    public void closeFrame() {
         frame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
+    }
+
+    public BufferedImage getDrawingImage(int width, int height) {
+        return drawingPanel.getImage(width, height);
+    }
+
+    public void showResultImage(BufferedImage image) {
+        Graphics2D graphics = (Graphics2D) res1.getGraphics();
+
+        // clear
+        graphics.setColor(res1.getBackground());
+        graphics.fillRect(0, 0, res1.getWidth(), res1.getHeight());
+
+        // show area
+        graphics.setColor(Color.WHITE);
+        graphics.drawImage(image, 0, 0, null);
+    }
+
+    public void showResultImage(GrayScaleImage grayScaleImage) {
+        res2.setLayout(new BorderLayout());
+        res2.add(grayScaleImage, BorderLayout.CENTER);
+        res2.setPreferredSize(grayScaleImage.getSize());
+        frame.pack();
     }
 
     @Override
     public void mouseClicked(MouseEvent e) {
-        drawing = !drawing;
-        previousPoint = e.getPoint();
-    }
-
-    @Override
-    public void mouseMoved(MouseEvent e) {
-        if (drawing) {
-            Graphics graphics = drawingPanel.getGraphics();
-            ((Graphics2D) graphics).setStroke(new BasicStroke(4, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-            graphics.drawLine(previousPoint.x, previousPoint.y, e.getX(), e.getY());
-            previousPoint = e.getPoint();
-        }
+        drawingPanel.setDrawingOn(!drawingPanel.isDrawingOn(), e.getX(), e.getY());
     }
 
     @Override
@@ -85,9 +113,5 @@ public class RecognizerUI implements MouseListener, MouseMotionListener {
 
     @Override
     public void mouseExited(MouseEvent e) {
-    }
-
-    @Override
-    public void mouseDragged(MouseEvent e) {
     }
 }
