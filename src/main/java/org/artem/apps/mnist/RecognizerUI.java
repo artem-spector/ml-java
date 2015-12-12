@@ -57,6 +57,7 @@ public class RecognizerUI implements MouseListener{
         resultPanel.setLayout(new GridLayout(1, 2));
         resultPanel.add(res1);
         resultPanel.add(res2);
+        resultPanel.add(HandwrittenDigitsTrainer.getTestImages(16));
     }
 
     public void showFrame() {
@@ -69,6 +70,10 @@ public class RecognizerUI implements MouseListener{
 
     public void closeFrame() {
         frame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
+    }
+
+    public BufferedImage getDrawingImage() {
+        return drawingPanel.getImage();
     }
 
     public BufferedImage getDrawingImage(int width, int height) {
@@ -114,4 +119,5 @@ public class RecognizerUI implements MouseListener{
     @Override
     public void mouseExited(MouseEvent e) {
     }
+
 }

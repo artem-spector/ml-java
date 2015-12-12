@@ -89,6 +89,24 @@ public class HandwrittenDigitsTrainer {
         classification.fromMLData("", arrayMap);
     }
 
+    public static JPanel getTestImages(int numImages) {
+        try {
+            Matrix imageMatrix = readImageMatrix("src/main/resources/mnist/t10k-images-idx3-ubyte.gz", 2051);
+            Matrix labelMatrix = readLabelMatrix("src/main/resources/mnist/t10k-labels-idx1-ubyte.gz", 2049);
+
+            String[] labels = new String[numImages];
+            double[][] images = new double[numImages][];
+
+            for (int i = 0; i < numImages; i++) {
+                images[i] = imageMatrix.getRow(i).asArray();
+                labels[i] = String.valueOf((int) labelMatrix.get(i, 0));
+            }
+            return new DisplayUtil().createImageGrid(images, 28, 28, 2, labels);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private void delme(int numImages) throws IOException {
         testImages = readImageMatrix("src/main/resources/mnist/t10k-images-idx3-ubyte.gz", 2051);
         testLabels = readLabelMatrix("src/main/resources/mnist/t10k-labels-idx1-ubyte.gz", 2049);
@@ -104,6 +122,15 @@ public class HandwrittenDigitsTrainer {
         JFrame frame = displayUtil.showFrame("", panel);
         displayUtil.pause();
         displayUtil.closeFrame(frame);
+    }
+
+    public JPanel getRandomTestImages(int numImages) throws IOException {
+        int[] randIndexes = new ArrayUtil().randperm(testImages.numRows());
+        int[] indexes = new int[numImages];
+        System.arraycopy(randIndexes, 0, indexes, 0, indexes.length);
+        double[][] imageData = new double[indexes.length][];
+        for (int i = 0; i < indexes.length; i++) imageData[i] = testImages.getRow(indexes[i]).asArray();
+        return displayUtil.createImageGrid(imageData, 28, 28, 2, null);
     }
 
     private void loadTrainingData() throws IOException, ExecutionException, InterruptedException {
@@ -123,13 +150,6 @@ public class HandwrittenDigitsTrainer {
         loadImages.get();
     }
 
-    private void printRandomImages(Matrix images, int numImages, String file) throws IOException {
-        int[] randIndexes = new ArrayUtil().randperm(images.numRows());
-        int[] indexes = new int[numImages];
-        System.arraycopy(randIndexes, 0, indexes, 0, indexes.length);
-        printImages(images, file, indexes);
-    }
-
     private void printImages(Matrix images, String file, int... indexes) throws IOException {
         double[][] imageData = new double[indexes.length][];
         for (int i = 0; i < indexes.length; i++) imageData[i] = images.getRow(indexes[i]).asArray();
@@ -137,7 +157,7 @@ public class HandwrittenDigitsTrainer {
         displayUtil.saveImage(panel, file);
     }
 
-    private void loadTestData() throws IOException, ExecutionException, InterruptedException {
+    public void loadTestData() throws IOException, ExecutionException, InterruptedException {
         Future<Void> loadImages = threadPool.submit(() -> {
             testImages = readImageMatrix("src/main/resources/mnist/t10k-images-idx3-ubyte.gz", 2051);
             System.out.println("Test images: " + testImages.numRows());
@@ -154,7 +174,7 @@ public class HandwrittenDigitsTrainer {
         loadImages.get();
     }
 
-    private Matrix readImageMatrix(String imageFile, int magicNumber) throws IOException {
+    private static Matrix readImageMatrix(String imageFile, int magicNumber) throws IOException {
         IDXFileReader reader = new IDXFileReader(imageFile, magicNumber, 3);
         int[] dimensions = reader.getDimensions();
 
@@ -172,7 +192,7 @@ public class HandwrittenDigitsTrainer {
         return MATRIX_FACTORY.createMatrix(img);
     }
 
-    private Matrix readLabelMatrix(String labelFile, int magicNumber) throws IOException {
+    private static Matrix readLabelMatrix(String labelFile, int magicNumber) throws IOException {
         IDXFileReader reader = new IDXFileReader(labelFile, magicNumber, 1);
         int numLabels = reader.getDimensions()[0];
 

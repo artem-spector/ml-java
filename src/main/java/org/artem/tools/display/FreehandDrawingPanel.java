@@ -10,6 +10,7 @@ import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 
 import static java.awt.image.BufferedImage.TYPE_BYTE_GRAY;
+import static java.awt.image.BufferedImage.TYPE_INT_RGB;
 
 /**
  * TODO: Document!
@@ -44,16 +45,27 @@ public class FreehandDrawingPanel extends JPanel implements MouseMotionListener 
         shape = new GeneralPath();
     }
 
+    public BufferedImage getImage() {
+        BufferedImage res = new BufferedImage(getWidth(), getHeight(), TYPE_BYTE_GRAY);
+        Graphics2D g2 = (Graphics2D) res.getGraphics();
+        g2.setBackground(Color.WHITE);
+        g2.fillRect(0, 0, res.getWidth(), res.getHeight());
+        g2.setColor(Color.BLACK);
+        setStroke(g2);
+
+        g2.draw(shape);
+        g2.dispose();
+        return res;
+    }
+
     public BufferedImage getImage(int width, int height) {
         Rectangle rectangle = shape.getBounds();
-        double scaleX = calculateScale(rectangle.getWidth(), width);
-        double scaleY = calculateScale(rectangle.getHeight(), height);
-        double scale = Math.min(scaleX, scaleY);
 
-        AffineTransform af = new AffineTransform();
+        double scale = Math.min(calculateScale(rectangle.getWidth(), width), calculateScale(rectangle.getHeight(), height));
         double shiftX = ((double) width - rectangle.getWidth() * scale) / 2 - rectangle.getX() * scale;
         double shiftY = ((double) height - rectangle.getHeight() * scale) / 2 - rectangle.getY() * scale;
 
+        AffineTransform af = new AffineTransform();
         af.translate(shiftX, shiftY);
         af.scale(scale, scale);
         Shape transformedShape = af.createTransformedShape(shape);
@@ -81,8 +93,12 @@ public class FreehandDrawingPanel extends JPanel implements MouseMotionListener 
         Point2D currentPoint = shape.getCurrentPoint();
 
         Graphics2D graphics = (Graphics2D) getGraphics();
-        graphics.setStroke(new BasicStroke(4, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        setStroke(graphics);
         graphics.drawLine((int) previousPoint.getX(), (int) previousPoint.getY(), (int) currentPoint.getX(), (int) currentPoint.getY());
+    }
+
+    private void setStroke(Graphics2D graphics) {
+        graphics.setStroke(new BasicStroke(8, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
     }
 
     private double calculateScale(double srcValue, int targetValue) {
