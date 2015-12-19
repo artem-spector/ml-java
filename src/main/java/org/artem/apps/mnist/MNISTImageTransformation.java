@@ -2,6 +2,8 @@ package org.artem.apps.mnist;
 
 import org.artem.tools.display.Drawing;
 
+import java.awt.geom.Point2D;
+
 /**
  * Transformation to be applied to an image so that it would comply the MNIST dataset as described at http://yann.lecun.com/exdb/mnist/
  * <br/>
@@ -30,13 +32,17 @@ public class MNISTImageTransformation {
     public void transform() {
         data = new double[WIDTH][HEIGHT];
         double[][] pixels = drawing.toPixels(20, 20);
+        Point2D.Double massCenter = calculateMassCenter(pixels);
+        int shiftX = 10 - (int) Math.round(massCenter.x) + 4;
+        int shiftY = 10 - (int) Math.round(massCenter.y) + 4;
 
-        for (int i = 0; i < 28; i++)
-            for (int j = 0; j < 28; j++)
-                if (i >= 4 && i < 24 && j >= 4 && j < 24)
-                    data[i][j] = pixels[i - 4][j - 4];
-                else
-                    data[i][j] = 0;
+        for (int i = 0; i < 28; i++) {
+            int srcX = i - shiftX;
+            for (int j = 0; j < 28; j++) {
+                int srcY = j - shiftY;
+                data[i][j] = (srcX >= 0 && srcX < 20 && srcY >= 0 && srcY < 20) ? pixels[srcX][srcY] : 0;
+            }
+        }
     }
 
 
@@ -45,6 +51,20 @@ public class MNISTImageTransformation {
         for (int i = 0; i < WIDTH; i++)
             for (int j = 0; j < HEIGHT; j++)
                 res[i * HEIGHT + j] = data[i][j];
+        return res;
+    }
+
+    private Point2D.Double calculateMassCenter(double[][] pixels) {
+        double totalMass = 0;
+        Point2D.Double res = new Point2D.Double(0, 0);
+        for (int i = 0; i < pixels.length; i++)
+            for (int j = 0; j < pixels[0].length; j++) {
+                double pixelMass = pixels[i][j];
+                totalMass += pixelMass;
+                res.setLocation(res.x + pixelMass * i, res.y + pixelMass * j);
+            }
+
+        res.setLocation(res.x / totalMass, res.y / totalMass);
         return res;
     }
 

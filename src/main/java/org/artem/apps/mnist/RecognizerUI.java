@@ -6,8 +6,9 @@ import org.artem.tools.display.GrayScaleImage;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
-import java.awt.image.BufferedImage;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.WindowEvent;
 
 /**
  * TODO: Document!
@@ -28,7 +29,6 @@ public class RecognizerUI implements MouseListener{
     private FreehandDrawingPanel drawingPanel = new FreehandDrawingPanel();
 
     private JPanel resultPanel = new JPanel();
-    private JPanel res1 = new JPanel();
     private JPanel res2 = new JPanel();
 
     public RecognizerUI(HandwrittenDigitsRecognizer recognizer) {
@@ -60,9 +60,7 @@ public class RecognizerUI implements MouseListener{
 
         resultPanel.setPreferredSize(new Dimension(500, 500));
         resultPanel.setLayout(new GridLayout(1, 2));
-        resultPanel.add(res1);
         resultPanel.add(res2);
-        resultPanel.add(HandwrittenDigitsTrainer.getTestImages(16));
     }
 
     public void showFrame() {
@@ -76,18 +74,6 @@ public class RecognizerUI implements MouseListener{
 
     public void closeFrame() {
         frame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
-    }
-
-    public void showResultImage(BufferedImage image) {
-        Graphics2D graphics = (Graphics2D) res1.getGraphics();
-
-        // clear
-        graphics.setColor(res1.getBackground());
-        graphics.fillRect(0, 0, res1.getWidth(), res1.getHeight());
-
-        // show area
-        graphics.setColor(Color.WHITE);
-        graphics.drawImage(image, 0, 0, null);
     }
 
     public void showResultImage(GrayScaleImage grayScaleImage) {
