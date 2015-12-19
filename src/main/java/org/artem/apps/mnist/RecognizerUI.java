@@ -1,5 +1,6 @@
 package org.artem.apps.mnist;
 
+import org.artem.tools.display.Drawing;
 import org.artem.tools.display.FreehandDrawingPanel;
 import org.artem.tools.display.GrayScaleImage;
 
@@ -34,7 +35,11 @@ public class RecognizerUI implements MouseListener{
         this.recognizer = recognizer;
 
         clearButton.addActionListener(e -> drawingPanel.clear());
-        okButton.addActionListener(e -> this.recognizer.analyzeDrawing());
+        okButton.addActionListener(e -> {
+            Drawing drawing = drawingPanel.getDrawing();
+            drawing.stopRecording();
+            this.recognizer.analyzeDrawing(drawing);
+        });
 
         contentPanel.setLayout(new BorderLayout());
         contentPanel.add(inputPanel, BorderLayout.CENTER);
@@ -66,18 +71,11 @@ public class RecognizerUI implements MouseListener{
         frame.pack();
         frame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         frame.setVisible(true);
+        drawingPanel.clear();
     }
 
     public void closeFrame() {
         frame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
-    }
-
-    public BufferedImage getDrawingImage() {
-        return drawingPanel.getImage();
-    }
-
-    public BufferedImage getDrawingImage(int width, int height) {
-        return drawingPanel.getImage(width, height);
     }
 
     public void showResultImage(BufferedImage image) {

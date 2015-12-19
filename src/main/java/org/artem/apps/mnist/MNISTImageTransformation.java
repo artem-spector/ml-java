@@ -1,8 +1,6 @@
 package org.artem.apps.mnist;
 
-import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.awt.image.ColorModel;
+import org.artem.tools.display.Drawing;
 
 /**
  * Transformation to be applied to an image so that it would comply the MNIST dataset as described at http://yann.lecun.com/exdb/mnist/
@@ -19,68 +17,35 @@ import java.awt.image.ColorModel;
  */
 public class MNISTImageTransformation {
 
-    private final ColorModel colorModel;
-    private BufferedImage original;
-    private BufferedImage resized;
-    private double[] data;
+    public static final int WIDTH = 28;
+    public static final int HEIGHT = 28;
 
-    public MNISTImageTransformation(BufferedImage original) {
-        this.original = original;
-        colorModel = original.getColorModel();
+    private Drawing drawing;
+    private double[][] data;
+
+    public MNISTImageTransformation(Drawing drawing) {
+        this.drawing = drawing;
     }
 
     public void transform() {
-        int minX = original.getWidth() - 1;
-        int maxX = 0;
-        int minY = original.getHeight() - 1;
-        int maxY = 0;
-        for (int i = 0; i < original.getWidth(); i++)
-            for (int j = 0; j < original.getHeight(); j++)
-                if (grayScale(original.getRGB(i, j)) < 255) {
-                    minX = Math.min(minX, i);
-                    maxX = Math.max(maxX, i);
-                    minY = Math.min(minY, j);
-                    maxY = Math.max(maxY, j);
-                }
-        Rectangle origRect = new Rectangle(minX, minY, maxX - minX +1, maxY - minY + 1);
+        data = new double[WIDTH][HEIGHT];
+        double[][] pixels = drawing.toPixels(20, 20);
 
-        double scaleX = 20d / origRect.getWidth();
-        double scaleY = 20d / origRect.getHeight();
-        double scale = Math.min(scaleX, scaleY);
-
-        resized = new BufferedImage(20, 20, original.getType());
-        Graphics2D g = resized.createGraphics();
-        g.setBackground(Color.WHITE);
-        g.fillRect(0, 0, resized.getWidth(), resized.getHeight());
-
-        g.setColor(Color.BLACK);
-        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        g.setStroke(new BasicStroke(1f));
-        g.drawImage(original, 0, 0, (int) Math.round((origRect.getWidth() + 1) * scale), (int) Math.round((origRect.getHeight() + 1) * scale), minX, minY, maxX, maxY, null);
-        g.dispose();
-
-        data = new double[20 * 20];
-        for (int i = 0; i < 20; i++)
-            for (int j = 0; j < 20; j++)
-                data[i * 20 + j] = grayScale(resized.getRGB(i, j));
+        for (int i = 0; i < 28; i++)
+            for (int j = 0; j < 28; j++)
+                if (i >= 4 && i < 24 && j >= 4 && j < 24)
+                    data[i][j] = pixels[i - 4][j - 4];
+                else
+                    data[i][j] = 0;
     }
 
-    public BufferedImage getResizedImage() {
-        return resized;
-    }
 
     public double[] getData() {
-        return data;
-    }
-
-    private int grayScale(int rgb) {
-        int red = colorModel.getRed(rgb);
-        int green = colorModel.getGreen(rgb);
-        int blue = colorModel.getBlue(rgb);
-
-        assert red == green && red == blue;
-        return red;
+        double[] res = new double[WIDTH * HEIGHT];
+        for (int i = 0; i < WIDTH; i++)
+            for (int j = 0; j < HEIGHT; j++)
+                res[i * HEIGHT + j] = data[i][j];
+        return res;
     }
 
 }
