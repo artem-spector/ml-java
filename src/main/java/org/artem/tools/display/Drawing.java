@@ -88,7 +88,13 @@ public class Drawing {
         for (int i = 0; i < width; i++)
             for (int j = 0; j < height; j++) {
                 Rectangle2D.Double rectangle = new Rectangle2D.Double(minX + scale * i, minY + scale * j, scale, scale);
-                res[i][j] = crosses(rectangle) ? 255 : 0;
+                if (crosses(rectangle)) {
+                    res[i][j] = 255;
+                    if (i > 0) res[i - 1][j] = 255;
+                    else res[i + 1][j] = 255;
+                    if (j > 0) res[i][j - 1] = 255;
+                    else res[i][j + 1] = 255;
+                }
             }
         return antiAlias(res);
     }
@@ -116,12 +122,22 @@ public class Drawing {
                     res[i][j] = pixels[i][j];
                 } else {
                     double bordersSum = 0;
-                    if (i > 0) bordersSum += pixels[i - 1][j];
-                    if (i < width - 1) bordersSum += pixels[i + 1][j];
-                    if (j > 0) bordersSum += pixels[i][j - 1];
-                    if (j < height - 1) bordersSum += pixels[i][j + 1];
+                    boolean hasLeft = i > 0;
+                    boolean hasRight = i < width - 1;
+                    boolean hasDown = j > 0;
+                    boolean hasUp = j < height - 1;
 
-                    res[i][j] = bordersSum / 4;
+                    if (hasLeft) bordersSum += pixels[i - 1][j];
+                    if (hasRight) bordersSum += pixels[i + 1][j];
+                    if (hasDown) bordersSum += pixels[i][j - 1];
+                    if (hasUp) bordersSum += pixels[i][j + 1];
+
+                    if (hasLeft && hasDown) bordersSum += pixels[i - 1][j - 1];
+                    if (hasLeft && hasUp) bordersSum += pixels[i - 1][j + 1];
+                    if (hasRight && hasDown) bordersSum += pixels[i + 1][j - 1];
+                    if (hasRight && hasUp) bordersSum += pixels[i + 1][j + 1];
+
+                    res[i][j] = bordersSum / 8;
                 }
             }
         }
