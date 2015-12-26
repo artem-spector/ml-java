@@ -90,7 +90,7 @@ public class Drawing {
                 Rectangle2D.Double rectangle = new Rectangle2D.Double(minX + scale * i, minY + scale * j, scale, scale);
                 res[i][j] = crosses(rectangle) ? 255 : 0;
             }
-        return res;
+        return antiAlias(res);
     }
 
     private boolean crosses(Rectangle2D rectangle) {
@@ -103,5 +103,28 @@ public class Drawing {
             }
         }
         return false;
+    }
+
+    private double[][] antiAlias(double[][] pixels) {
+        int width = pixels.length;
+        int height = pixels[0].length;
+        double[][] res = new double[width][height];
+
+        for (int i = 0; i < width; i++) {
+            for (int j = 0; j < height; j++) {
+                if (pixels[i][j] != 0d) {
+                    res[i][j] = pixels[i][j];
+                } else {
+                    double bordersSum = 0;
+                    if (i > 0) bordersSum += pixels[i - 1][j];
+                    if (i < width - 1) bordersSum += pixels[i + 1][j];
+                    if (j > 0) bordersSum += pixels[i][j - 1];
+                    if (j < height - 1) bordersSum += pixels[i][j + 1];
+
+                    res[i][j] = bordersSum / 4;
+                }
+            }
+        }
+        return res;
     }
 }
