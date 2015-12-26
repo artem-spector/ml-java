@@ -53,6 +53,7 @@ public class HandwrittenDigitsRecognizer {
         grayScaleImage.setLabel(String.valueOf(label));
 
         ui.showResultImage(grayScaleImage);
+        ui.showLabelPredictions(classification.getRawLabelPredictions(data));
     }
 
 }

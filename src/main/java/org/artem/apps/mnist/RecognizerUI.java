@@ -9,6 +9,7 @@ import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.WindowEvent;
+import java.util.Map;
 
 /**
  * TODO: Document!
@@ -29,7 +30,8 @@ public class RecognizerUI implements MouseListener{
     private FreehandDrawingPanel drawingPanel = new FreehandDrawingPanel();
 
     private JPanel resultPanel = new JPanel();
-    private JPanel res2 = new JPanel();
+    private JPanel res1 = new JPanel();
+    private TextArea res2 = new TextArea();
 
     public RecognizerUI(HandwrittenDigitsRecognizer recognizer) {
         this.recognizer = recognizer;
@@ -60,6 +62,7 @@ public class RecognizerUI implements MouseListener{
 
         resultPanel.setPreferredSize(new Dimension(500, 500));
         resultPanel.setLayout(new GridLayout(1, 2));
+        resultPanel.add(res1);
         resultPanel.add(res2);
     }
 
@@ -77,10 +80,18 @@ public class RecognizerUI implements MouseListener{
     }
 
     public void showResultImage(GrayScaleImage grayScaleImage) {
-        res2.setLayout(new BorderLayout());
-        res2.add(grayScaleImage, BorderLayout.CENTER);
-        res2.setPreferredSize(grayScaleImage.getSize());
+        res1.setLayout(new BorderLayout());
+        res1.add(grayScaleImage, BorderLayout.CENTER);
+        res1.setPreferredSize(grayScaleImage.getSize());
         frame.pack();
+    }
+
+    public void showLabelPredictions(Map<Integer, Double> labelPredictions) {
+        res2.setText("");
+        for (int label = 0; label <= 9; label++) {
+            Double val = labelPredictions.get(label);
+            res2.append(label + ": " + (int) (val * 100) + "% \n");
+        }
     }
 
     @Override
@@ -103,5 +114,4 @@ public class RecognizerUI implements MouseListener{
     @Override
     public void mouseExited(MouseEvent e) {
     }
-
 }

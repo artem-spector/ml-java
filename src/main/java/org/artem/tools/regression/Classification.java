@@ -9,10 +9,7 @@ import org.artem.tools.vector.MatrixFactory;
 import org.artem.tools.vector.Vector;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
@@ -76,7 +73,7 @@ public class Classification implements MLExternalizable {
         for (int i = 0; i < res.length; i++) {
             Vector row = labelPredictions.getRow(i);
             int labelIdx = row.idxMax();
-            res[i] = row.get(labelIdx) == 1 ? trainedLabels[labelIdx] : -1;
+            res[i] = row.get(labelIdx) > 0.5 ? trainedLabels[labelIdx] : -1;
         }
         return res;
     }
@@ -96,12 +93,20 @@ public class Classification implements MLExternalizable {
         return res;
     }
 
+    public Map<Integer, Double> getRawLabelPredictions(double[] imageData) {
+        Map<Integer, Double> res = new HashMap<>();
+        for (int i = 0; i < trainedLabels.length; i++) {
+            res.put(trainedLabels[i], trainedPredictors[i].predict(null, imageData));
+        }
+        return res;
+    }
+
     private Matrix getLabelPredictions(Matrix X) {
         assert trained;
 
         Matrix res = matrixFactory.createMatrix(X.numRows(), trainedLabels.length);
         for (int j = 0; j < trainedLabels.length; j++) {
-            Matrix labelPredictions = trainedPredictors[j].predict(p -> p >= 0.5 ? 1 : 0, X);
+            Matrix labelPredictions = trainedPredictors[j].predict(null, X);
             for (int i = 0; i < res.numRows(); i++)
                 res.set(i, j, labelPredictions.get(i, 0));
         }
